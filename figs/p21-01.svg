@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+  </defs>
+  <!-- 机（なめらか） -->
+  <path d="M30,80 A150,40 0 0 0 330,80 L330,92 A150,40 0 0 1 30,92 Z" fill="#cfd8e1" stroke="#1a1d21" stroke-width="1.5"/>
+  <ellipse cx="180" cy="80" rx="150" ry="40" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <text x="44" y="70" font-size="13" font-family="sans-serif" fill="#565d66">なめらか</text>
+  <!-- 円運動の道 -->
+  <ellipse cx="180" cy="80" rx="95" ry="24" fill="none" stroke="#1a1d21" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <!-- 穴と糸 -->
+  <ellipse cx="180" cy="80" rx="5" ry="2.5" fill="#1a1d21"/>
+  <line x1="262.3" y1="92" x2="180" y2="80" stroke="#1a1d21" stroke-width="1.5"/>
+  <line x1="180" y1="80" x2="180" y2="186" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="214" y="80" font-size="17" font-style="italic">R</text>
+  <!-- 机上の m -->
+  <circle cx="262.3" cy="92" r="8" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="246" y="112" font-size="18" font-style="italic">m</text>
+  <line x1="270" y1="89" x2="304" y2="75" stroke="#1a1d21" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="306" y="70" font-size="17" font-style="italic">v<tspan font-size="12" dy="4">0</tspan></text>
+  <!-- 吊りおもり M -->
+  <rect x="165" y="186" width="30" height="28" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="200" y="208" font-size="18" font-style="italic">M</text>
+  <text x="200" y="232" font-size="13" font-family="sans-serif" fill="#565d66">静止</text>
+</svg>

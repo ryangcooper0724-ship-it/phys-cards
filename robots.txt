@@ -1,0 +1,4 @@
+# 責務: 検索エンジンに載せない（SPEC §2.9・§7）。依存: なし。
+# 注意: index.html の noindex の meta と対で置く。
+User-agent: *
+Disallow: /

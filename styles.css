@@ -1,0 +1,1214 @@
+/* 責務: 見た目（色の変数・ダークモード・セーフエリア・文字とボタンの大きさ・見出しの帯・タイル・パネル・章の色。SPEC §2.9）。
+   依存: なし（フォント・画像は読み込まない。CSP の style-src 'self'・img-src 'self'。アイコンも CSS の形で描く）。
+   注意: 色は変数で切り替える。文字のコントラスト比 4.5:1 以上（S39 は背景色 background-color で測るので、グラデーションの帯にも同じ暗さの背景色を置く）。 */
+:root {
+  --bg: #f2f5f8;
+  --surface: #ffffff;
+  --fg: #1a1d21;
+  --muted: #565d66;
+  --accent: #1f5f8b;
+  --accent-fg: #ffffff;
+  --accent-soft: #e3eefb;
+  --button-bg: #e6edf3;
+  --button-fg: #1a1d21;
+  --border: #d3dbe3;
+  --line: #e3e8ee;
+  --band-1: #174a6e;
+  --band-2: #2a6f9e;
+  --band-fg: #ffffff;
+  --shadow: 0 1px 2px rgba(16, 40, 64, 0.06), 0 4px 14px rgba(16, 40, 64, 0.08);
+  --radius: 14px;
+  /* 評価のボタン（もう一度＝赤・難しい＝橙・正解＝緑・簡単＝青） */
+  --r1-bg: #fde8e8;
+  --r1-fg: #9b1c1c;
+  --r1-line: #e8a3a3;
+  --r2-bg: #fdeedd;
+  --r2-fg: #8a4500;
+  --r2-line: #e9b67e;
+  --r3-bg: #e3f4e8;
+  --r3-fg: #17602f;
+  --r3-line: #8fcca0;
+  --r4-bg: #e3eefb;
+  --r4-fg: #174f8a;
+  --r4-line: #93b9e3;
+  /* バッジと帯 */
+  --star-bg: #fff1c2;
+  --star-fg: #7a5200;
+  --star-line: #e3b341;
+  --gray-bg: #eceff2;
+  --gray-fg: #4d535a;
+  --how-bg: #eef5fb;
+  --how-line: #9cc2e3;
+  --warn-bg: #fdecea;
+  --warn-fg: #8b1f1f;
+  --warn-line: #e8a3a3;
+  --danger-bg: #8b1f1f;
+  --danger-fg: #ffffff;
+  --track: #e1e7ee;
+  /* 章ごとの色（12 色を回す。白い文字で 4.5:1 以上） */
+  --ch-0: #5b6169;
+  --ch-1: #1f5f8b;
+  --ch-2: #0f6b6b;
+  --ch-3: #2e7032;
+  --ch-4: #875800;
+  --ch-5: #a8382c;
+  --ch-6: #8a3a8b;
+  --ch-7: #4a4fae;
+  --ch-8: #a0314d;
+  --ch-9: #3f6a20;
+  --ch-10: #006577;
+  --ch-11: #7a4b2a;
+  --ch-fg: #ffffff;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121417;
+    --surface: #1c2025;
+    --fg: #eceef0;
+    --muted: #b0b6bc;
+    --accent: #6fb3e0;
+    --accent-fg: #0b1a24;
+    --accent-soft: #1b3450;
+    --button-bg: #2a3036;
+    --button-fg: #eceef0;
+    --border: #3d454d;
+    --line: #2c3238;
+    --band-1: #173a55;
+    --band-2: #225274;
+    --band-fg: #ffffff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.35);
+    --r1-bg: #4a1f22;
+    --r1-fg: #ffc9c9;
+    --r1-line: #8a3a3f;
+    --r2-bg: #46301a;
+    --r2-fg: #ffd9a8;
+    --r2-line: #8a5a2a;
+    --r3-bg: #1b3a26;
+    --r3-fg: #b6ecc6;
+    --r3-line: #357a4c;
+    --r4-bg: #1b3450;
+    --r4-fg: #bcdcff;
+    --r4-line: #3a6a9e;
+    --star-bg: #3f3210;
+    --star-fg: #ffd866;
+    --star-line: #8a6d1e;
+    --gray-bg: #2f353b;
+    --gray-fg: #c9ced3;
+    --how-bg: #1d2c3a;
+    --how-line: #3a6a9e;
+    --warn-bg: #4a1f22;
+    --warn-fg: #ffd2d2;
+    --warn-line: #8a3a3f;
+    --danger-bg: #8b1f1f;
+    --danger-fg: #ffffff;
+    --track: #2f363d;
+    --ch-0: #b8bec6;
+    --ch-1: #7fb8e6;
+    --ch-2: #6fd0c8;
+    --ch-3: #8fd694;
+    --ch-4: #f0c060;
+    --ch-5: #f4998f;
+    --ch-6: #e0a0e2;
+    --ch-7: #a9adf5;
+    --ch-8: #f29bb5;
+    --ch-9: #b9da8a;
+    --ch-10: #74d2e3;
+    --ch-11: #dcb48f;
+    --ch-fg: #111418;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  /* システムの日本語フォントだけ（読み込みはしない） */
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.6;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  padding: 0 16px 16px;
+}
+
+.screen {
+  padding-top: 16px;
+}
+
+/* 札の印（§12.3。表の先頭、★の前） */
+.tag-badge { display: inline-block; font-size: 14px; font-weight: 700; line-height: 1.6; padding: 0 10px; margin-right: 8px;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent); vertical-align: 2px; }
+
+/* 数式（KaTeX。§12.2）: 文中は行に合わせ、独立の行は中央で、はみ出したら横に送る（画面の幅を広げない） */
+.math-display { display: block; margin: 0.4em 0; overflow-x: auto; overflow-y: hidden; text-align: center; }
+.math .katex { font-size: 1.05em; }
+
+/* 化学式の sub・sup: 小さく（0.75em）、行の高さを広げない（line-height 0 で行の箱に効かせない。上下の位置は sub・super のまま） */
+sub,
+sup {
+  font-size: 0.75em;
+  line-height: 0;
+}
+
+sub {
+  vertical-align: sub;
+}
+
+sup {
+  vertical-align: super;
+}
+
+button {
+  min-height: 44px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--button-fg);
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0 16px;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 20px 0 8px;
+}
+
+/* 見出しの帯（主色のグラデーション）。画面の先頭の h1 と統計の見出しの行。
+   背景色も置く（S39 は背景色で測る。グラデーションの明るい端でも白い文字で 4.5:1 以上） */
+.screen > h1:first-child,
+.stats-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -16px -16px 16px;
+  padding: 14px 16px;
+  background-color: var(--band-1);
+  background-image: linear-gradient(120deg, var(--band-1), var(--band-2));
+  color: var(--band-fg);
+  border-radius: 0 0 18px 18px;
+  box-shadow: var(--shadow);
+  line-height: 1.3;
+}
+
+/* 帯の小さなアイコン（2枚重ねのカードの形。CSS だけで描く） */
+.screen > h1:first-child::before,
+.stats-head h1::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid var(--band-fg);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 4px -4px 0 -1px rgba(255, 255, 255, 0.55);
+  margin-right: 4px;
+}
+
+.screen > h1.app-title:first-child {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+/* パネル（白、ダークは濃い灰。角丸と柔らかい影） */
+.panel,
+.tile,
+.chapter-list,
+.help-item,
+.report-panel,
+.errors-list,
+.cards-list {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* 大きな数字のタイル */
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.tile {
+  margin: 0;
+  padding: 12px 14px;
+  border-top: 4px solid var(--accent);
+}
+
+.tile .gap {
+  white-space: pre;
+}
+
+.tile .num {
+  display: inline-block;
+  width: 100%;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.count {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tile-new {
+  border-top-color: var(--r3-line);
+}
+
+/* 今日の進み具合と連続日数 */
+.today-row {
+  padding: 10px 14px 12px;
+  margin: 0 0 12px;
+}
+
+.today-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.progress-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.bar {
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--accent);
+  background-image: linear-gradient(90deg, var(--band-2), var(--accent));
+}
+
+/* バッジ */
+.badge {
+  display: inline-block;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.badge.streak {
+  background: var(--r2-bg);
+  color: var(--r2-fg);
+  border: 1px solid var(--r2-line);
+}
+
+/* 連続日数のしるし（絵文字は使わない。小さな菱形） */
+.badge.streak::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  background: currentColor;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.badge.ok {
+  background: var(--r3-bg);
+  color: var(--r3-fg);
+  margin-left: 4px;
+}
+
+.badge.late {
+  background: var(--r1-bg);
+  color: var(--r1-fg);
+  margin-left: 4px;
+}
+
+.hint {
+  font-weight: 700;
+}
+
+.muted,
+.sec {
+  color: var(--muted);
+}
+
+.sec {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+
+/* 色付きの帯（催促・保存の失敗・別のタブ） */
+.banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  border: 1px solid var(--warn-line);
+  border-left-width: 6px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+main > .banner:first-child {
+  margin-top: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+/* 設定の章の一覧（パネルの中に行を並べる） */
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 14px;
+}
+
+.chapter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.chapter-row:last-child {
+  border-bottom: none;
+}
+
+.chapter-name {
+  font-weight: 600;
+}
+
+/* トグルの形（出す＝主色の塗りで丸が右、出さない＝地の色で丸が左） */
+.chapter-toggle,
+.filter-toggle {
+  position: relative;
+  min-width: 112px;
+  flex-shrink: 0; /* 章の名前が長くても縮まず1行のまま（物理の「第14章 なめらかな面との弾性衝突」など。§12.1） */
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 8px 14px 8px 42px;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  text-align: center;
+}
+
+.chapter-toggle::before,
+.filter-toggle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.chapter-toggle.on,
+.filter-toggle.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+  padding: 8px 42px 8px 14px;
+}
+
+.chapter-toggle.on::before,
+.filter-toggle.on::before {
+  left: auto;
+  right: 6px;
+  border-color: var(--accent-fg);
+}
+
+.study {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.left-count {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.limits {
+  display: grid;
+  grid-template-columns: auto 6em;
+  gap: 8px;
+  align-items: center;
+}
+
+.limits input {
+  font-family: inherit;
+  font-size: 17px;
+  min-height: 44px;
+  padding: 4px 8px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.error-text {
+  color: var(--fg);
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+/* 学習のカード: 影付きのパネル、上端に章の色の線 */
+.card-panel {
+  margin-top: 12px;
+  padding: 12px 16px 14px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top: 5px solid var(--chc, var(--accent));
+}
+
+.card-face {
+  margin-top: 0;
+}
+
+#study-front {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 節番号のバッジ（表では上に出す。並びは DOM のまま order で上げる） */
+#study-front .sec-badge {
+  order: -1;
+  align-self: flex-start;
+  margin: 0 0 4px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--chc, var(--accent));
+  color: var(--ch-fg);
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+/* 表と裏の境の区切り線 */
+.card-face.back {
+  margin-top: 12px;
+  border-top: 2px dashed var(--border);
+  padding-top: 10px;
+}
+
+.card-text {
+  font-size: 20px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.card-note {
+  font-size: 17px;
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ★は金色のバッジ、（余裕あり）は灰色のバッジ（カードの文字なので大きさは 20px のまま） */
+.star {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--star-bg);
+  color: var(--star-fg);
+  border: 1px solid var(--star-line);
+  line-height: 1.4;
+}
+
+.yoyu {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--gray-bg);
+  color: var(--gray-fg);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* 「出し方:」はうすい色の囲み */
+.how-box {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--how-bg);
+  border-left: 4px solid var(--how-line);
+}
+
+/* 章ごとの色の表（.chc-N が --chc を決める） */
+.chc-0 { --chc: var(--ch-0); }
+.chc-1 { --chc: var(--ch-1); }
+.chc-2 { --chc: var(--ch-2); }
+.chc-3 { --chc: var(--ch-3); }
+.chc-4 { --chc: var(--ch-4); }
+.chc-5 { --chc: var(--ch-5); }
+.chc-6 { --chc: var(--ch-6); }
+.chc-7 { --chc: var(--ch-7); }
+.chc-8 { --chc: var(--ch-8); }
+.chc-9 { --chc: var(--ch-9); }
+.chc-10 { --chc: var(--ch-10); }
+.chc-11 { --chc: var(--ch-11); }
+
+/* 長いカードでもボタンを画面の下に留める（S47・A81。文字はボタンの背の地で隠れ、一番下まで送れば全部見える） */
+.bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  padding-bottom: env(safe-area-inset-bottom);
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+}
+
+.bottom .hint {
+  margin: 0 0 8px;
+}
+
+button.big {
+  width: 100%;
+  min-height: 56px;
+  font-size: 18px;
+  border-radius: 14px;
+}
+
+.ratings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.rating {
+  min-height: 56px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border-width: 1px 1px 4px;
+}
+
+.rating .interval {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.rating-1 { background: var(--r1-bg); color: var(--r1-fg); border-color: var(--r1-line); }
+.rating-2 { background: var(--r2-bg); color: var(--r2-fg); border-color: var(--r2-line); }
+.rating-3 { background: var(--r3-bg); color: var(--r3-fg); border-color: var(--r3-line); }
+.rating-4 { background: var(--r4-bg); color: var(--r4-fg); border-color: var(--r4-line); }
+
+.steps li {
+  margin: 8px 0;
+}
+
+.step-icon {
+  display: inline-block;
+  min-width: 1.6em;
+  font-weight: 700;
+}
+/* 週の報告・読み込み・新しく始める・エラーの記録・別のタブ（T3） */
+.banner p {
+  margin: 0;
+}
+
+.banner button {
+  margin-top: 8px;
+}
+
+button.danger {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+  border-color: var(--danger-bg);
+}
+
+.report-panel {
+  margin-top: 12px;
+  padding: 10px 14px 12px;
+}
+
+.report-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font-family: inherit;
+  font-size: 17px;
+  padding: 8px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+#import-file {
+  font-size: 17px;
+  min-height: 44px;
+  margin-top: 8px;
+}
+
+.errors-list {
+  padding: 8px 14px 8px 2.2em;
+}
+
+.error-item {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.error-meta {
+  display: block;
+  font-size: 15px;
+}
+/* 統計（T4）: 390×750 にスクロールなしで収める（S16）。本文は 17px のまま行の間を詰める */
+.stats p {
+  margin: 2px 0;
+  line-height: 1.4;
+}
+
+.stats-head {
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.stats-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  align-self: center;
+}
+
+.stats-head #stats-now {
+  color: var(--band-fg);
+  font-weight: 600;
+  margin: 0;
+}
+
+.stats .tiles {
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+/* 今日の評価のタイルを広く（「今日の評価 N 回・」を4桁まで1行に） */
+.stats .stat-tiles {
+  grid-template-columns: 3fr 2fr;
+}
+
+.stats .tile {
+  margin: 0;
+  padding: 3px 10px 4px;
+  border-top-width: 3px;
+  line-height: 1.3;
+}
+
+.stats .tile.wide {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.num-inline {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-chapters {
+  margin: 0 0 6px;
+  padding: 2px 10px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.stats-chapters.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  line-height: 1.2;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 1px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stats-table tbody tr:last-child th,
+.stats-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.stats-table th[scope="row"],
+.stats-table thead th:first-child {
+  text-align: left;
+}
+
+/* 章ごとの「出した／全数」の横棒（章の色） */
+.stats-table .bar-col,
+.stats-table .bar-cell {
+  width: 30%;
+  padding-left: 8px;
+}
+
+.two-col .stats-table .bar-col,
+.two-col .stats-table .bar-cell {
+  width: 22%;
+  padding-left: 4px;
+}
+
+.bar-cell .bar {
+  height: 8px;
+  margin: 0;
+}
+
+.bar-cell .bar-fill {
+  background-color: var(--chc, var(--accent));
+  background-image: none;
+}
+
+.stats .actions {
+  margin-top: 8px;
+}
+
+/* 使い方・カードの一覧（T4） */
+.help-item {
+  margin: 0 0 10px;
+  padding: 2px 14px 8px;
+}
+
+.help-item h2 {
+  margin: 8px 0 4px;
+}
+
+.help-item p {
+  margin: 4px 0;
+}
+
+.cards-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px;
+}
+
+.card-item {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.card-item:last-child {
+  border-bottom: none;
+}
+
+.card-item p {
+  margin: 2px 0;
+}
+
+.card-meta {
+  font-size: 15px;
+}
+
+.card-q,
+.card-a,
+.card-how {
+  font-size: 20px;
+}
+
+/* 版の知らせ・新しい版（T5）: 青い帯 */
+.banner.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--accent-soft);
+  color: var(--r4-fg);
+  border-color: var(--r4-line);
+  margin: 0 0 12px;
+}
+
+.banner.notice button {
+  margin-top: 0;
+  min-width: 44px;
+}
+
+button.banner-button {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  background-color: var(--band-1);
+  background-image: linear-gradient(120deg, var(--band-1), var(--band-2));
+  color: var(--band-fg);
+  border-color: var(--band-1);
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+/* 図（SPEC §13.2）: 印の場所に1つのブロック。白い台（ダークモードでも白地）。高さは画面の 40% まで。押すと拡大。 */
+.fig {
+  display: block;
+  margin: 10px 0;
+  padding: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: zoom-in;
+}
+
+.fig img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  object-fit: contain;
+}
+
+.fig-back {
+  width: 55%;
+}
+
+.fig-missing {
+  display: block;
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.fig-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 14, 18, 0.92);
+}
+
+.fig-zoom-frame {
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  padding: 6px;
+  background: #ffffff;
+  border-radius: 10px;
+}
+
+.fig-zoom-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+}
+
+.fig-zoom-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 12px;
+}
+
+/* 動き（SPEC §13.3）: canvas（幅いっぱい・16:10）・ボタン・つまみ・測った値。自動で動かさない。 */
+.anim {
+  display: block;
+  margin: 12px 0;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.anim-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.anim-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.anim-controls {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.anim-controls button {
+  flex: 1;
+  min-height: 44px;
+}
+
+.anim-sliders {
+  display: block;
+}
+
+.anim-slider {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr) 5.6em; /* 値の列をそろえる（つまみの長さを行ごとに変えない） */
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.anim-slider input {
+  width: 100%;
+}
+
+.anim-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.anim-readouts {
+  display: block;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--how-bg);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.anim-readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.anim-readout .anim-value {
+  font-weight: 700;
+}
+
+.anim-missing {
+  display: block;
+  color: var(--muted);
+}
+
+/* 問題集（SPEC §13.4）: ホームの「いまやっている」・問題集の印・選ぶ画面 */
+.mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 4px;
+}
+
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mode-label {
+  font-size: 13px;
+}
+
+.mode-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pack-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--r2-bg);
+  color: var(--r2-fg);
+  font-size: 13px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
+.pack-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.pack-mark {
+  flex: 0 0 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.pack-row.on .pack-mark {
+  border: 8px solid var(--accent);
+}
+
+.pack-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pack-name {
+  font-weight: 700;
+}
+
+.pack-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 新しく進める（SPEC §13.5）: ホームの「復習」「新しく進める」の箱と、章を選ぶ画面 */
+.study-box {
+  margin: 12px 0;
+}
+
+.study-box-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.study-box-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.study-box-num {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.study-box-note {
+  margin: 4px 0 10px;
+  font-size: 14px;
+}
+
+.study-box button {
+  width: 100%;
+}
+
+.study-box-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.study-box-actions button {
+  flex: 1;
+}
+
+.chapter-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.chapter-pick .chapter-left {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-pick.done .chapter-left {
+  color: var(--r3-fg);
+  font-weight: 700;
+}
+
+/* 章を選ぶ・やる物を選ぶの一覧（SPEC §13.4・§13.5）: 箇条書きの点を出さず、行の間に少し空ける */
+.chapters-list,
+.packs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}

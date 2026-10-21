@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+  </defs>
+  <line x1="60" y1="30" x2="300" y2="30" stroke="#1a1d21" stroke-width="2"/>
+  <g stroke="#8a929b" stroke-width="1">
+    <line x1="70" y1="30" x2="78" y2="22"/><line x1="100" y1="30" x2="108" y2="22"/><line x1="130" y1="30" x2="138" y2="22"/>
+    <line x1="160" y1="30" x2="168" y2="22"/><line x1="190" y1="30" x2="198" y2="22"/><line x1="220" y1="30" x2="228" y2="22"/>
+    <line x1="250" y1="30" x2="258" y2="22"/><line x1="280" y1="30" x2="288" y2="22"/>
+  </g>
+  <line x1="180" y1="30" x2="180" y2="70" stroke="#1a1d21" stroke-width="2"/>
+  <circle cx="180" cy="70" r="22" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <circle cx="180" cy="70" r="3" fill="#1a1d21"/>
+  <line x1="158" y1="70" x2="158" y2="170" stroke="#1a1d21" stroke-width="1.5"/>
+  <line x1="202" y1="70" x2="202" y2="140" stroke="#1a1d21" stroke-width="1.5"/>
+  <rect x="143" y="170" width="30" height="30" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <rect x="187" y="140" width="30" height="30" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="147" y="191" font-size="17" font-style="italic">m<tspan font-size="11" dy="4">1</tspan></text>
+  <text x="191" y="161" font-size="17" font-style="italic">m<tspan font-size="11" dy="4">2</tspan></text>
+  <line x1="110" y1="30" x2="110" y2="170" stroke="#1a1d21" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+  <text x="88" y="108" font-size="17" font-style="italic">x<tspan font-size="11" dy="4">1</tspan></text>
+  <line x1="250" y1="30" x2="250" y2="140" stroke="#1a1d21" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+  <text x="256" y="92" font-size="17" font-style="italic">x<tspan font-size="11" dy="4">2</tspan></text>
+  <text x="232" y="232" font-size="13" font-family="sans-serif" fill="#565d66">x は鉛直下向き</text>
+  <text x="40" y="232" font-size="13" font-family="sans-serif" fill="#565d66">滑車は質量 0・なめらか</text>
+</svg>

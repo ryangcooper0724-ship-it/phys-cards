@@ -1,0 +1,10 @@
+{
+ "pendulum": {
+  "label": "単振り子",
+  "params": {
+   "L": {"label": "糸の長さ L", "unit": "m", "min": 0.1, "max": 3, "step": 0.1, "default": 1},
+   "theta0": {"label": "振れ角 θ₀", "unit": "°", "min": 1, "max": 80, "step": 1, "default": 10},
+   "g": {"label": "重力 g", "unit": "m/s²", "min": 1, "max": 20, "step": 0.1, "default": 9.8}
+  }
+ }
+}

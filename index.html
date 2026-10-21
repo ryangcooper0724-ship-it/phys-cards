@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- 責務: アプリの入口のページ（CSP・manifest・アイコン・main.js の読み込み）。
+     依存: styles.css・main.js・manifest.webmanifest・icons/。版は書かない（version.js にだけ書く。SPEC §2.7）。
+     注意: CSP は SPEC §7 の文字列そのまま。インラインの script・style を置かない。 -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="物理暗記">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#2e6b3a">
+<title>物理 暗記カード</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="vendor/katex-0.16.47/katex.min.css">
+<script type="module" src="main.js"></script>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+</body>
+</html>
