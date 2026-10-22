@@ -1192,6 +1192,12 @@ button.banner-button {
   width: 100%;
 }
 
+/* 「もう少し進める」（S81）: 「今日の分を始める」の下に小さめに */
+.study-box button.more-button {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
 .study-box-actions {
   display: flex;
   gap: 8px;

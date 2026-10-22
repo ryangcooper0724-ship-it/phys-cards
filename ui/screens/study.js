@@ -1,6 +1,7 @@
 /* 責務: 学習の画面（表 → 答えを見る → 裏と4つの評価のボタン・間隔。SPEC §2.2・§2.2.1・§11）。plan のデッキの練習（上に「練習 i / N」。§14.4）と
    問題集（上に「{label} i / N」、裏に「間違えた」「できた」の2つ。§14.6）も同じ画面の形で出す（app.study.kind が "today"・"practice"・"pack"）。
-   依存: ../dom.js、../../core/format.js・queue.js。app.study と app.reveal・app.rate・app.answerPack・app.undo・app.canUndoStudy・app.practiceAgain・app.navigate。
+   依存: ../dom.js、../../core/format.js・queue.js。app.study と app.reveal・app.rate・app.answerPack・app.undo・app.canUndoStudy・app.practiceAgain・app.navigate・
+   app.moreKind・app.studyMore（今日の分の終わりの「もう少し進める」。S81）。
    解説（exp。§14.13）は裏の答えの下のたためる段で、最初は閉じ、押した時に中身を組む。開いた状態は表を描くたびに捨てる（次のカード・出し直しでは閉じる）。開いている間はカードの下にボタンの段の高さ分の余白（.exp-open）。
    注意: 裏でも表（q）を上に残す。「1つ戻す」は左上で、戻せる答えがあるときだけ押せる（§2.2・§14.12）。終わりの表示は自動で更新しない（§11）。「答えを見る」と評価のボタンは下に寄せて高さ 56px 以上（§10・S47）。キーボードは main.js と ui/keys.js。
    見た目: 表と裏は1枚のパネル（.card-panel、章ごとの色 .chc-N）。今日の分は残り枚数（ホームの「今日の復習」＋「新しいカード」（＋2周目）と同じ数）を上に小さく出す。 */
@@ -103,6 +104,21 @@ function flowEndLines(end, app) {
   ];
 }
 
+/** 今日の分の終わりの「もう少し進める」（S81。plan のデッキで足せる物があるときだけ。化学は app.moreKind が null）。 */
+function moreButton(app) {
+  const kind = app.moreKind ? app.moreKind() : null;
+  if (kind === null) {
+    return null;
+  }
+  return el("div", { className: "actions" }, [
+    el("button", {
+      id: "study-more", className: "primary", attrs: { "data-more": kind },
+      text: kind === "new" ? "もう少し進める（+10）" : "もう少し進める（2 周目 +10）",
+      disabled: app.readFailed, on: { click: () => app.studyMore() },
+    }),
+  ]);
+}
+
 function endLines(end, app) {
   if (end && end.kind === "later") {
     return [el("p", { id: "study-later", text: `${formatClock(end.at)} ごろにもう一度開くと ${end.count} 枚` })];
@@ -157,6 +173,7 @@ export function render(app) {
       ...(flowEnd ? flowEndLines(s.end, app) : [
         el("p", { id: "study-done", className: "hint", text: "今日の分は終わり" }),
         ...endLines(s ? s.end : null, app),
+        moreButton(app),
       ]),
     ]);
   }

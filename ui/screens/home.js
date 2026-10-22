@@ -1,5 +1,5 @@
 /* 責務: ホームの画面。化学: 今日の復習・新しいカード・溜まり・出す章・冊子の版・始める・1つ戻す・週の報告と催促・統計・使い方・設定（SPEC §2.2・§2.5・§10・§11）。
-   plan のデッキ（物理。§14.3・§14.4・§14.6）: 「本編」の段（今日の分の数・2周目・上限の知らせ・今日の分を始める）・「もっと解く（練習）」の2つ・問題集ごとの段。
+   plan のデッキ（物理。§14.3・§14.4・§14.6）: 「本編」の段（今日の分の数・2周目・上限の知らせ・今日の分を始める・その下に小さく「もう少し進める」。S81）・「もっと解く（練習）」の2つ・問題集ごとの段（deck.json の soon が真なら「Coming soon」だけ）。
    依存: ../dom.js、../report_panel.js、../../core/queue.js・plan.js・stats.js・report.js（催促）・deck.js（版の知らせ）。app（main.js の状態と操作）を受け取る。
    注意: 記録が無い間は「始める」（化学）「統計」「週の報告」を押せない（§2.0・§14.3）。「1つ戻す」は undo があるとき（plan のデッキは app.canUndoHome＝undo に p が無く undo.id が本編のカードのときだけ。§14.12・A231）。
    「新しい版があります」はホームにだけ出す（§2.7）。起動で記録を読めなかった（app.readFailed）間は週の報告と、記録を作る操作を押せない（A113・禁止パターン）。 */
@@ -167,6 +167,20 @@ function rangeText(app) {
   return "章・札を選ぶ（テスト前などに）";
 }
 
+/** 「もう少し進める」（S81）: 今日の分の残りの後ろに1周目の新しいカード（無ければ2周目の対象）がある間だけ、「今日の分を始める」の下に小さく。
+    読めなかった起動の間は押せない（禁止パターン）。 */
+function moreButton(app) {
+  const kind = app.moreKind();
+  if (kind === null) {
+    return null;
+  }
+  return el("button", {
+    id: "home-more", className: "more-button", attrs: { "data-more": kind },
+    text: kind === "new" ? "もう少し進める（新しいカード +10）" : "もう少し進める（2 周目 +10）",
+    disabled: app.readFailed, on: { click: () => app.studyMore() },
+  });
+}
+
 function mainBlock(app, c, p) {
   const blockCreate = app.readFailed && !app.record; // 読めなかった起動の間は記録を作る操作を止める（禁止パターン）
   const round2Left = p.round2Active ? p.r2Left : 0;
@@ -191,6 +205,7 @@ function mainBlock(app, c, p) {
       text: total > 0 ? `今日の分を始める（約 ${minutes} 分）` : "今日の分は終わり",
       disabled: total === 0 || blockCreate, on: { click: () => app.startStudy() },
     }),
+    moreButton(app),
     el("p", { className: "practice-head", text: "もっと解く（練習）" }),
     el("p", { className: "muted practice-note", text: "今日の分とは別に、好きなだけ。何周してもよい" }),
     pickButton("home-mistakes", "間違えた問題を解き直す", mistakes > 0 ? `本編で間違えたことがある ${mistakes} 問` : "まだありません",
@@ -199,9 +214,23 @@ function mainBlock(app, c, p) {
   ]);
 }
 
-/** 問題集ごとの段（§14.6）。カードの無い問題集は出さない（A209）。 */
+/** 問題集の「Coming soon」の段（deck.json の soon が真。§14.6）: label と文字だけ（ボタンは出さない）。 */
+function soonBlock(pk) {
+  return el("div", { id: `home-pack-${pk.id}`, className: "panel study-box pack-box pack-soon", attrs: { "data-pack": pk.id } }, [
+    el("div", { className: "study-box-head" }, [
+      el("span", { className: "study-box-title", text: pk.label }),
+      el("span", { className: "muted pack-kind", text: "問題集" }),
+    ]),
+    el("p", { className: "muted study-box-note pack-soon-note", text: "Coming soon" }),
+  ]);
+}
+
+/** 問題集ごとの段（§14.6）。カードの無い問題集は出さない（A209）。soon が真の物だけ例外で「Coming soon」の段（A261）。 */
 function packBlocks(app) {
   return DECK.packs.map((pk) => {
+    if (pk.soon === true) {
+      return soonBlock(pk);
+    }
     const v = packView(app.cards, app.record, pk.id);
     if (v.total === 0) {
       return null;

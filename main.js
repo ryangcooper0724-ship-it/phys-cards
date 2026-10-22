@@ -1,5 +1,5 @@
 /* 責務: 起動の順番（SPEC §2.0 の (1) #install → (2) cards.json → (3) 記録の読み取り・#newer・退避と #broken（§4.9）→ (4) #settings（plan のデッキは #home）→ (5) #home）と、状態・操作（評価・設定・週の報告・読み込み・新しく始める・別のタブ）・画面の振り分け。
-   plan のデッキ（物理。§14）の学習の流れは app.studyFlow（{flow: "today"}・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）。
+   plan のデッキ（物理。§14）の学習の流れは app.studyFlow（{flow: "today"}（「もう少し進める」は kind・day・base・extra を足す。S81）・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）。
    plan のデッキの設定（目標日・2周目の出し方・本編の範囲 #range）と範囲を選んで解く（#practice。選んでいる途中は app.practiceDraft、記録が無い間の前回の範囲は app.practicePending）も持つ（§14.4・§14.7）。
    依存: core/*（純ロジック。plan のデッキの数え・評価・問題集は core/plan.js）、storage.js・platform.js・sw-client.js（外部資源）、router.js、ui/screens/*・ui/keys.js、version.js（build_dist.py が dist に作る）。
    注意: innerHTML を使わない（§7）。#install では localStorage に触らずエラーの記録も書かず SW も登録しない。版の更新と読み込みでは undo を null（§2.6。core/deck.js）。記録を書く・消すのは commitRecord・読み込み・新しく始める・起動の退避だけ（読み込み・新しく始める・週の報告は readFailed の間は止める。A79・A113。plan のデッキで記録を作る最初の評価・答えも readFailed の間は止める）。共有は押した処理の中で await なしで呼ぶ（§11）。 */
@@ -16,7 +16,7 @@ import {
 } from "./core/record.js";
 import { homeCounts, buildSession, refreshSession, nextCardId, markRated, withFront, endState, entryOf } from "./core/queue.js";
 import {
-  planQueueOpts, planRate, dismissPlanNotice, mistakenIds, shuffled, packView, answerPack, resetPack, restorePacks, isMainCard,
+  planQueueOpts, planMore, MORE_STEP, planRate, dismissPlanNotice, mistakenIds, shuffled, packView, answerPack, resetPack, restorePacks, isMainCard,
   planSettings, checkGoal, toggleRangeOff, toggleRangeOffField, readRange, toggleRangeChapter, toggleRangeField, toggleRangeTag, practiceIds,
 } from "./core/plan.js";
 import { previewSeconds } from "./core/scheduler.js";
@@ -117,7 +117,7 @@ const app = {
   //                   currentId, revealedAt, preview, end}
   study: null,
   undoResume: false, // ホームの「1つ戻す」から #study へ行く間（出す章が 0 でも開ける。§11）
-  studyFlow: null, // plan のデッキの学習の流れ（{flow: "today"}・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）
+  studyFlow: null, // plan のデッキの学習の流れ（{flow: "today"}（「もう少し進める」は {flow: "today", kind, day, base, extra}。S81）・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）
   practiceDraft: null, // #practice で選んでいる途中の範囲（{range: {chapters, tags, which}, open: Set（開いた分野の id）}。押すたびに保存しない。§14.4）
   practicePending: null, // 記録が無い間に「解く」を押した範囲（最初に記録を作るときに settings.practice に書く。§14.12）
   rangeOpen: new Set(), // #range で開いている分野の id（メモリだけ。§14.7）
@@ -139,7 +139,13 @@ function errorText(e) {
 /** core の queue・統計に渡す口（その時刻で数える）。plan のデッキは plan.js の数え（新しいカードの今日の残り・2周目の id。§14.3）、
     化学は何も足さない。午前4時をまたいだら読み直すだけで新しい日の数になる（refreshSession が並べ直す）。 */
 function queueOptsAt(nowMs) {
-  return PLAN ? planQueueOpts(app.mainCards, app.record, nowMs, PLAN_DECK) : CHEM_OPTS;
+  return PLAN ? planQueueOpts(app.mainCards, app.record, nowMs, PLAN_DECK, todayMore()) : CHEM_OPTS;
+}
+
+/** 今日の分の流れの「もう少し進める」の分（S81。{kind, day, base, extra}。無ければ null）。day が今日でなければ plan.js が捨てる（数え直す）。 */
+function todayMore() {
+  const f = app.studyFlow;
+  return f && f.flow === "today" && Number.isInteger(f.extra) && f.extra > 0 ? f : null;
 }
 Object.defineProperty(app, "queueOpts", { get: () => queueOptsAt(app.now()) });
 
@@ -459,7 +465,7 @@ app.toggleTag = (id) => {
 
 /** 設定の問題集の「最初から」（§14.6・§14.7）: 1回目で確認を出し、2回目でその問題集の done を空にする（miss は残す）。 */
 app.resetPackFromSettings = (packId) => {
-  if (!PLAN || app.otherTab || app.readFailed || !app.record || !DECK.packs.some((pk) => pk.id === packId)) {
+  if (!PLAN || app.otherTab || app.readFailed || !app.record || !DECK.packs.some((pk) => pk.id === packId && pk.soon !== true)) {
     return;
   }
   if (app.packResetAsk !== packId) {
@@ -560,6 +566,33 @@ app.startStudy = () => {
   app.navigate("study");
 };
 
+/** 「もう少し進める」のボタンの種類（S81）: "new"（1周目 +10）・"r2"（2周目 +10）・null（出さない。化学も null）。 */
+app.moreKind = () => {
+  if (!PLAN) {
+    return null;
+  }
+  const m = planMore(app.mainCards, app.record, app.now(), PLAN_DECK);
+  return m === null ? null : m.kind;
+};
+
+/** 「もう少し進める」（S81。ホームの本編の段と、学習の画面の今日の分の終わり）: 今日の分の (1)(2) と残りの後ろに、1周目の新しいカード
+    （無ければ2周目の対象）を order 順に MORE_STEP 枚足した流れで始める。今日の分の流れで同じ日・同じ周なら押すたびに extra を足し（起点 base はそのまま）、
+    ほかは今の数を起点に新しく数える。上限には数えない（A262）。足せる物が無いとき・読めなかった起動の間は何もしない（ボタンも押せなくする）。 */
+app.studyMore = () => {
+  if (!PLAN || app.readFailed) {
+    return; // 読めなかった起動の間は記録を作らない（禁止パターン）
+  }
+  const m = planMore(app.mainCards, app.record, app.now(), PLAN_DECK);
+  if (m === null) {
+    return;
+  }
+  const prev = todayMore();
+  const same = prev !== null && prev.day === m.day && prev.kind === m.kind;
+  app.study = null;
+  app.studyFlow = { flow: "today", kind: m.kind, day: m.day, base: same ? prev.base : m.base, extra: same ? prev.extra + MORE_STEP : MORE_STEP };
+  app.navigate("study");
+};
+
 /** 「間違えた問題を解き直す」（§14.4）: 出す本編のカードのうち「間違えた」物を混ぜた順で。0 枚なら何もしない。 */
 app.startMistakes = () => {
   if (!PLAN || !app.record) {
@@ -585,9 +618,10 @@ app.practiceAgain = () => {
   app.navigate("study");
 };
 
-/** 問題集を解く（§14.6）: mode は "next"（続きから。全部解いていれば done を空にして最初から）か "miss"（間違いを解き直す）。 */
+/** 問題集を解く（§14.6）: mode は "next"（続きから。全部解いていれば done を空にして最初から）か "miss"（間違いを解き直す）。
+    soon が真の問題集（Coming soon）は解けない（設定の「最初から」も同じ。A261）。 */
 app.startPack = (packId, mode) => {
-  if (!PLAN || app.otherTab || app.readFailed || !DECK.packs.some((pk) => pk.id === packId) || (mode !== "next" && mode !== "miss")) {
+  if (!PLAN || app.otherTab || app.readFailed || !DECK.packs.some((pk) => pk.id === packId && pk.soon !== true) || (mode !== "next" && mode !== "miss")) {
     return; // 読めなかった起動の間は押せない（§14.6。ボタンも押せなくする）
   }
   const v = packView(app.cards, app.record, packId);

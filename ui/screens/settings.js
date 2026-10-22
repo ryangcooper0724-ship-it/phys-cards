@@ -114,7 +114,8 @@ function recordBlock(app) {
   ];
 }
 
-/** plan のデッキの「問題集」の段（§14.7）: 問題集ごとに label・「解いた D / M・間違い K」・「最初から」（確認1回で done を空にする。§14.6）。 */
+/** plan のデッキの「問題集」の段（§14.7）: 問題集ごとに label・「解いた D / M・間違い K」・「最初から」（確認1回で done を空にする。§14.6）。
+    soon が真の問題集は label と「Coming soon」だけ（A261）。 */
 function packsBlock(app) {
   if (DECK.packs.length === 0) {
     return [];
@@ -123,6 +124,14 @@ function packsBlock(app) {
     el("h2", { text: "問題集" }),
     el("p", { className: "muted section-note", text: "本編とは別。間違えた物だけ残る" }),
     el("ul", { id: "settings-packs", className: "chapter-list" }, DECK.packs.map((pk) => {
+      if (pk.soon === true) { // deck.json の soon が真: label と「Coming soon」だけ（「最初から」は出さない。§14.6・A261）
+        return el("li", { className: "chapter-row pack-soon", attrs: { "data-pack": pk.id } }, [
+          el("span", { className: "chapter-name" }, [
+            el("span", { text: pk.label }),
+            el("span", { className: "pack-progress muted pack-soon-note", text: "Coming soon" }),
+          ]),
+        ]);
+      }
       const v = packView(app.cards, app.record, pk.id);
       const asking = app.packResetAsk === pk.id;
       return el("li", { className: "chapter-row", attrs: { "data-pack": pk.id } }, [

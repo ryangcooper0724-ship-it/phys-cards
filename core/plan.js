@@ -1,4 +1,4 @@
-/* 責務: plan のデッキ（物理）の今日の分の数え（1周目・2周目の日割り・上限の知らせ）・2周目の始まりと対象・「間違えた」の判定・評価の印・練習の範囲（選ぶ・前回の読み方）・
+/* 責務: plan のデッキ（物理）の今日の分の数え（1周目・2周目の日割り・上限の知らせ・「もう少し進める」の +10。S81）・2周目の始まりと対象・「間違えた」の判定・評価の印・練習の範囲（選ぶ・前回の読み方）・
    本編の範囲（rangeOff の切り替え）・目標日の入力の判定・問題集の解いた／間違い（SPEC §14.3〜§14.7・§14.12）。
    依存: ./day.js、./scheduler.js（期日の判定）、./queue.js（出す本編のカードの判定・項目の引き当て）、./record.js（既定の設定）、./review.js（評価）、./fields.js（章の分野）、./stats.js（「覚えた」の境目）。
    注意: 時刻とデッキの値（fields・examDay）は引数（core は DECK を読まない）。記録は変えず新しい記録を返す。数は §14.12 の式（数の表はテストが直書きで確かめる）。 */
@@ -173,10 +173,47 @@ export function round2Ids(cards, record, nowMs, fields, limit) {
     .map((c) => c.id);
 }
 
-/** queue.js の buildSession・refreshSession・withFront・homeCounts に渡す opts（その時刻で数える。午前4時をまたいだら呼び直す）。 */
-export function planQueueOpts(cards, record, nowMs, deck) {
+/** 「もう少し進める」の1回に足す枚数（S81）。 */
+export const MORE_STEP = 10;
+
+/**
+ * 「もう少し進める」（S81）で足せる物: 今日の分の残りの後ろに、1周目の新しいカードがあれば {kind: "new"}、無くて2周目の対象があれば {kind: "r2"}、
+ * どちらも無ければ null。base＝その周の今日数えた分（planNew か round2Seen）＋今日の残り（足す分の起点）、day＝今日の論理日（午前4時をまたいだら捨てる）。
+ * 上限（newPerDay）には数えない（上限 0 でも足せる。A262）。
+ */
+export function planMore(cards, record, nowMs, deck) {
   const c = planCounts(cards, record, nowMs, deck);
-  return { plan: true, newLimit: c.newLeft, round2Ids: round2Ids(cards, record, nowMs, deck.fields ?? [], c.r2Left) };
+  if (c.r1 > c.newLeft) {
+    return { kind: "new", day: c.today, base: (record ? dayValue(record.planNew, c.today) : 0) + c.newLeft };
+  }
+  if (c.r2 > c.r2Left) {
+    return { kind: "r2", day: c.today, base: (record ? dayValue(record.round2Seen, c.today) : 0) + c.r2Left };
+  }
+  return null;
+}
+
+/** 今日の分の流れの枚数（S81）: more（{kind, day, base, extra}。今日の分の流れの app.studyFlow）があれば、その周の今日の残りを
+    base ＋ extra − 今日数えた分まで広げる（R を超えない・今日の残りより減らさない）。day が今日でなければ今日の分のまま。 */
+function flowLimits(c, record, more) {
+  const out = { newLeft: c.newLeft, r2Left: c.r2Left };
+  if (!more || more.day !== c.today || !Number.isInteger(more.extra) || more.extra <= 0) {
+    return out;
+  }
+  const want = more.base + more.extra;
+  if (more.kind === "new") {
+    out.newLeft = Math.min(c.r1, Math.max(c.newLeft, want - (record ? dayValue(record.planNew, c.today) : 0)));
+  } else if (more.kind === "r2") {
+    out.r2Left = Math.min(c.r2, Math.max(c.r2Left, want - (record ? dayValue(record.round2Seen, c.today) : 0)));
+  }
+  return out;
+}
+
+/** queue.js の buildSession・refreshSession・withFront・homeCounts に渡す opts（その時刻で数える。午前4時をまたいだら呼び直す）。
+    more は「もう少し進める」の流れ（S81。flowLimits）。足した分も planNew・round2Seen に数えるので、翌日からの日割りは §14.12 の式のまま下がる。 */
+export function planQueueOpts(cards, record, nowMs, deck, more = null) {
+  const c = planCounts(cards, record, nowMs, deck);
+  const lim = flowLimits(c, record, more);
+  return { plan: true, newLimit: lim.newLeft, round2Ids: round2Ids(cards, record, nowMs, deck.fields ?? [], lim.r2Left) };
 }
 
 /** 今日の論理日の log がそのカードに1件も無いか（練習の「その日最初の1回」。§14.4）。 */
