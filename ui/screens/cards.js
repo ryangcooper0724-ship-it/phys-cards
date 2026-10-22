@@ -1,6 +1,6 @@
 /* 責務: カードの一覧の画面（#cards。SPEC §2.3・S38）: 全カードの表と裏を order 順に並べる確認用の画面。plan のデッキ（物理。§14.10）は本編を分野・章の順（分野ごとの段）に、続けて問題集ごとの段。
    依存: ../dom.js（htmlField はトークンの列から createElement で組み立てる）、../../core/fields.js（章の分野）。app.cards・app.plan・app.navigate。
-   注意: 記録が無くても開ける（§2.0）。カードの HTML は消毒を通して出す（§7。innerHTML を使わない）。how・exp が null の欄は出さない（「null」を出さない）。解説（exp。§14.13）は開いた状態で出す。 */
+   注意: 記録が無くても開ける（§2.0）。カードの HTML は消毒を通して出す（§7。innerHTML を使わない）。how・exp が null の欄は出さない（「null」を出さない）。解説（exp。§14.13）は開いた状態で出す。動きの印は「動きを見る」のボタンで出し、押した時に箱を組む（htmlField の list）。 */
 import { el, htmlField, chapterName, tagBadge, packBadge } from "../dom.js";
 import { DECK } from "../../deck.js";
 import { ANIM_PER_CARD } from "../../core/cards.js";

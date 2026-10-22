@@ -69,7 +69,7 @@ function mathNode(tok, cardId) {
 /** カードの欄の HTML を DocumentFragment にする（許可したタグだけ要素にする。数式のデッキでは数式の区間を描く）。cardId はエラーの記録用。 */
 /**
  * カードの欄の HTML → DOM の断片。opts.field は q・a・how（図の |裏: は q だけ。§13.10）、opts.back は答えを見た後（q の図を裏の図にする）、
- * opts.list はカードの一覧（図を lazy にし、裏の図を後ろに小さく並べる）。
+ * opts.list はカードの一覧（図を lazy にし、裏の図を後ろに小さく並べる。動きは「動きを見る」のボタンにする）。
  */
 export function htmlField(html, cardId = "", opts = {}) {
   const frag = document.createDocumentFragment();
@@ -85,7 +85,7 @@ export function htmlField(html, cardId = "", opts = {}) {
         if (budget) {
           budget.n -= 1;
         }
-        top.append(animBox(tok));
+        top.append(animBox(tok, { lazy: opts.list === true })); // 一覧は「動きを見る」のボタンだけ（押した時に箱を組む）
       }
     } else if (tok.t === "fig") {
       top.append(figureNode(tok, { back: opts.back === true, list: opts.list === true }));

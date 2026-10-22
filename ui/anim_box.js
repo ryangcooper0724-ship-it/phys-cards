@@ -1,6 +1,6 @@
 /* 責務: 動きの印（sanitize の {t: "anim", template, params}）を動きの箱にする: canvas・再生・止める・最初から・名前ごとのつまみ・測った値（SPEC §13.3・§13.10）。
    依存: ../anim/catalog.json（値の範囲の正）と ../anim/<ひな形>.js（create(canvas, params) → {reset, step, draw, readouts}）を必要になった時に読む。
-   注意: 自動で動かさない。ループは requestAnimationFrame で、箱が画面から外れた・stopAll（画面の移動・アプリが隠れた）で必ず止める。dt は 1/30 秒で切る。 */
+   注意: 自動で動かさない。ループは requestAnimationFrame で、箱が画面から外れた・見えない（解説の段が閉じた）・動きが終わった（probe().done）・stopAll（画面の移動・アプリが隠れた）で必ず止める。dt は 1/30 秒で切る。 */
 
 const TEMPLATE_RE = /^[a-z][a-z0-9-]{0,30}$/;
 const DT_MAX = 1 / 30;
@@ -81,14 +81,28 @@ function button(text, cls) {
   return b;
 }
 
-/** 動きのトークン → 動きの箱（div.anim）。中身はひな形を読んだ後に組む。 */
-export function animBox(tok) {
+/**
+ * 動きのトークン → 動きの箱（div.anim）。中身はひな形を読んだ後に組む。
+ * opts.lazy（カードの一覧）は「動きを見る」のボタンだけを出し、押した時に箱を組む（canvas を作る。印の多い一覧で canvas を並べない）。
+ */
+export function animBox(tok, opts = {}) {
   const box = document.createElement("div");
   box.className = "anim";
   box.dataset.anim = tok.template;
+  if (opts.lazy === true) {
+    const open = button("動きを見る", "anim-open");
+    open.addEventListener("click", () => fill(box, tok), { once: true });
+    box.replaceChildren(open);
+    return box;
+  }
+  fill(box, tok);
+  return box;
+}
+
+function fill(box, tok) {
   if (!TEMPLATE_RE.test(tok.template)) {
     failNode(box, tok.template, null);
-    return box;
+    return;
   }
   loadCatalog()
     .then((catalog) => {
@@ -105,7 +119,16 @@ export function animBox(tok) {
       });
     })
     .catch((e) => failNode(box, tok.template, e));
-  return box;
+}
+
+/** 箱が見えているか（画面に付いていて、箱か祖先が hidden・display:none でない）。 */
+function shown(box) {
+  return box.isConnected && box.getClientRects().length > 0;
+}
+
+/** ひな形が終わりを知らせる口（probe().done）があれば、その値（無ければ偽）。 */
+function ended(sim) {
+  return typeof sim.probe === "function" && sim.probe().done === true;
 }
 
 function build(box, spec, initial, mod) {
@@ -130,6 +153,7 @@ function build(box, spec, initial, mod) {
   let sim = mod.create(canvas, params);
   let frame = null;
   let last = null;
+  let finished = false; // 再生のまま終わりに着いてループを止めた（最初から・つまみで続けて再生する）
 
   function showReadouts() {
     out.replaceChildren(...sim.readouts().map((r) => {
@@ -156,8 +180,8 @@ function build(box, spec, initial, mod) {
 
   function tick(now) {
     frame = null;
-    if (!box.isConnected) {
-      stop(); // 画面から外れた（次のカード・ほかの画面）
+    if (!shown(box)) {
+      stop(); // 画面から外れた（次のカード・ほかの画面）か、解説の段が閉じた。開き直しても自動で再開しない（§13.10）
       return;
     }
     if (last !== null) {
@@ -166,10 +190,16 @@ function build(box, spec, initial, mod) {
     last = now;
     sim.draw();
     showReadouts();
+    if (ended(sim)) {
+      stop(); // 終わりのある動きが終わった（最後の絵と値は描いた。requestAnimationFrame を残さない）
+      finished = true;
+      return;
+    }
     frame = requestAnimationFrame(tick);
   }
 
   function start() {
+    finished = false;
     if (frame === null) {
       running.add(stop);
       frame = requestAnimationFrame(tick);
@@ -198,17 +228,26 @@ function build(box, spec, initial, mod) {
       last = null;
       sim.draw();
       showReadouts();
+      if (finished) {
+        start();
+      }
     });
     row.append(name, range, value);
     sliders.append(row);
   }
   play.addEventListener("click", start);
-  pause.addEventListener("click", stop);
+  pause.addEventListener("click", () => {
+    finished = false;
+    stop();
+  });
   restart.addEventListener("click", () => {
     sim.reset();
     last = null;
     sim.draw();
     showReadouts();
+    if (finished) {
+      start(); // 再生のまま終わった後の最初からは、前と同じく続けて動かす
+    }
   });
   requestAnimationFrame(() => {
     sim.draw(); // 止まった最初の絵（自動で動かさない）

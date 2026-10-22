@@ -6,5 +6,79 @@
    "theta0": {"label": "振れ角 θ₀", "unit": "°", "min": 1, "max": 80, "step": 1, "default": 10},
    "g": {"label": "重力 g", "unit": "m/s²", "min": 1, "max": 20, "step": 0.1, "default": 9.8}
   }
- }
+ },
+ "projectile": {"label": "斜方投射", "params": {
+  "v0": {"label": "初速 v₀", "unit": "m/s", "min": 1, "max": 30, "step": 0.5, "default": 10},
+  "theta": {"label": "投げる角 θ（下向きは負）", "unit": "°", "min": -90, "max": 90, "step": 1, "default": 45},
+  "h": {"label": "投げる高さ h", "unit": "m", "min": 0, "max": 20, "step": 0.5, "default": 0},
+  "target": {"label": "標的（0 なし・1 あり）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}},
+ "relative": {"label": "2つの物体の放物運動", "params": {
+  "v1": {"label": "1 の初速", "unit": "m/s", "min": 0, "max": 30, "step": 0.5, "default": 10},
+  "th1": {"label": "1 の角", "unit": "°", "min": -90, "max": 90, "step": 1, "default": 60},
+  "v2": {"label": "2 の初速", "unit": "m/s", "min": 0, "max": 30, "step": 0.5, "default": 8},
+  "th2": {"label": "2 の角", "unit": "°", "min": -90, "max": 90, "step": 1, "default": 20},
+  "h": {"label": "投げる高さ h", "unit": "m", "min": 0, "max": 20, "step": 0.5, "default": 0}}},
+ "split": {"label": "放物運動の途中の分裂", "params": {
+  "v0": {"label": "初速 v₀（60°）", "unit": "m/s", "min": 0, "max": 20, "step": 0.5, "default": 12},
+  "ratio": {"label": "質量の比 m₁/m₂", "unit": "", "min": 0.2, "max": 5, "step": 0.1, "default": 1.5},
+  "kick": {"label": "割れた時の相対速さ", "unit": "m/s", "min": 0, "max": 10, "step": 0.5, "default": 6},
+  "ts": {"label": "割れる時刻", "unit": "s", "min": 0.1, "max": 2, "step": 0.1, "default": 0.8},
+  "g": {"label": "重力 g", "unit": "m/s²", "min": 0, "max": 20, "step": 0.1, "default": 9.8}}},
+ "atwood": {"label": "動く天井の滑車", "params": {
+  "ratio": {"label": "質量の比 m₁/m₂", "unit": "", "min": 0.2, "max": 5, "step": 0.1, "default": 2},
+  "acc": {"label": "天井の加速度 ẍ₀（下向き正）", "unit": "m/s²", "min": -10, "max": 15, "step": 0.1, "default": 0}}},
+ "wedge": {"label": "動く台と物体", "params": {
+  "ratio": {"label": "質量の比 M/m", "unit": "", "min": 0.5, "max": 10, "step": 0.5, "default": 2},
+  "theta": {"label": "斜面の角（曲面は上端）", "unit": "°", "min": 10, "max": 80, "step": 1, "default": 30},
+  "curve": {"label": "面の形（0 斜面・1 曲面）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0},
+  "view": {"label": "見る系（0 床・1 台）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}},
+ "circle": {"label": "円運動の速度と加速度", "params": {
+  "r": {"label": "半径 r", "unit": "m", "min": 0.5, "max": 3, "step": 0.1, "default": 1},
+  "omega": {"label": "角速度 ω（初め）", "unit": "rad/s", "min": 0.5, "max": 5, "step": 0.1, "default": 2},
+  "alpha": {"label": "角加速度（0 で等速）", "unit": "rad/s²", "min": 0, "max": 3, "step": 0.1, "default": 0},
+  "dt": {"label": "作図の時間 Δt", "unit": "s", "min": 0.05, "max": 1, "step": 0.05, "default": 0.2}}},
+ "slide": {"label": "なめらかな面を滑り降りる", "params": {
+  "h": {"label": "高さ h", "unit": "m", "min": 0.2, "max": 5, "step": 0.1, "default": 1}}},
+ "incline": {"label": "あらい斜面と摩擦", "params": {
+  "theta": {"label": "傾き θ（傾けるときは最後の角）", "unit": "°", "min": 0, "max": 60, "step": 1, "default": 20},
+  "mu": {"label": "静止摩擦係数 μ", "unit": "", "min": 0.1, "max": 1, "step": 0.05, "default": 0.5},
+  "mu2": {"label": "動摩擦係数 μ′", "unit": "", "min": 0.05, "max": 1, "step": 0.05, "default": 0.3},
+  "tilt": {"label": "傾け方（0 固定・1 ゆっくり）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}},
+ "rubber-slope": {"label": "ゴムひもと摩擦の斜面", "params": {
+  "km": {"label": "k/m（ゴムの強さ ÷ 質量）", "unit": "1/s²", "min": 1, "max": 20, "step": 0.5, "default": 8},
+  "theta": {"label": "傾き θ", "unit": "°", "min": 10, "max": 60, "step": 1, "default": 30},
+  "mu2": {"label": "動摩擦係数 μ′", "unit": "", "min": 0, "max": 0.8, "step": 0.05, "default": 0.1}}},
+ "vcircle": {"label": "鉛直面内の円運動", "params": {
+  "v0": {"label": "最下点の速さ ÷ √(gR)（√2≈1.41・√5≈2.24）", "unit": "", "min": 0.5, "max": 3, "step": 0.01, "default": 2},
+  "kind": {"label": "表示（0 円筒の内面・1 糸）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}},
+ "orbit": {"label": "万有引力の軌道", "params": {
+  "v": {"label": "打ち出す速さ ÷ 円軌道の速さ", "unit": "", "min": 0.5, "max": 1.6, "step": 0.01, "default": 1},
+  "angle": {"label": "打ち出す向き（水平から外向き）", "unit": "°", "min": 0, "max": 60, "step": 1, "default": 0},
+  "r": {"label": "打ち出す距離 ÷ r₀", "unit": "", "min": 0.5, "max": 4, "step": 0.5, "default": 1}}},
+ "pull": {"label": "穴に通した糸で引き込む", "params": {
+  "shrink": {"label": "最後の半径 R/n の n", "unit": "", "min": 1, "max": 4, "step": 0.5, "default": 2},
+  "speed": {"label": "引き込む速さ", "unit": "m/s", "min": 0.05, "max": 0.5, "step": 0.05, "default": 0.2},
+  "slow": {"label": "スロー", "unit": "", "min": 1, "max": 4, "step": 1, "default": 1}}},
+ "collide": {"label": "一直線の衝突", "params": {
+  "ratio": {"label": "質量の比 m₁/m₂", "unit": "", "min": 0.1, "max": 10, "step": 0.1, "default": 1},
+  "e": {"label": "反発係数 e", "unit": "", "min": 0, "max": 1, "step": 0.05, "default": 1},
+  "v1": {"label": "1 の速度（右向き正）", "unit": "m/s", "min": -5, "max": 5, "step": 0.5, "default": 3},
+  "v2": {"label": "2 の速度", "unit": "m/s", "min": -5, "max": 5, "step": 0.5, "default": 0},
+  "view": {"label": "見方（0 床・1 重心）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}},
+ "drag": {"label": "粘性抵抗のある落下", "params": {
+  "r": {"label": "雨粒の大きさ ÷ 基準", "unit": "", "min": 0.5, "max": 2, "step": 0.1, "default": 1},
+  "v0": {"label": "初速 ÷ 終端速度", "unit": "", "min": 0, "max": 2, "step": 0.1, "default": 0}}},
+ "spring": {"label": "鉛直ばね振り子", "params": {
+  "m": {"label": "質量 m", "unit": "kg", "min": 0.1, "max": 2, "step": 0.1, "default": 1},
+  "k": {"label": "ばね定数 k", "unit": "N/m", "min": 2, "max": 50, "step": 1, "default": 49},
+  "g": {"label": "重力 g", "unit": "m/s²", "min": 0, "max": 20, "step": 0.1, "default": 9.8},
+  "x0": {"label": "放す位置（自然長から下）", "unit": "m", "min": 0, "max": 1.5, "step": 0.01, "default": 0.3}}},
+ "tilt-box": {"label": "傾ける斜面の上の箱", "params": {
+  "mu": {"label": "静止摩擦係数 μ", "unit": "", "min": 0.1, "max": 1.5, "step": 0.05, "default": 0.6},
+  "lh": {"label": "底面の半幅 ÷ 重心の高さ", "unit": "", "min": 0.2, "max": 1.5, "step": 0.05, "default": 0.5}}},
+ "turntable": {"label": "回転台の上の物体", "params": {
+  "r": {"label": "中心からの距離 r", "unit": "m", "min": 0.1, "max": 1, "step": 0.05, "default": 0.5},
+  "mu": {"label": "静止摩擦係数 μ", "unit": "", "min": 0.1, "max": 1, "step": 0.05, "default": 0.5},
+  "rate": {"label": "ω を上げる速さ", "unit": "rad/s²", "min": 0.2, "max": 1, "step": 0.1, "default": 0.5},
+  "view": {"label": "見方（0 床・1 台と回る）", "unit": "", "min": 0, "max": 1, "step": 1, "default": 0}}}
 }

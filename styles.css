@@ -1146,6 +1146,12 @@ button.banner-button {
   color: var(--muted);
 }
 
+/* カードの一覧の動きは、押すまでボタンだけ（canvas を作らない） */
+.anim-open {
+  width: 100%;
+  min-height: 44px;
+}
+
 /* 問題集のカードの印（SPEC §13.4・§14.6） */
 .pack-badge {
   display: inline-block;
