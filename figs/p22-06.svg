@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <text x="26" y="26" font-size="12" font-family="sans-serif">同じ作用線の上：つり合う</text>
+  <text x="204" y="26" font-size="12" font-family="sans-serif">作用線がずれる：回り出す</text>
+  <line x1="180" y1="34" x2="180" y2="236" stroke="#8a929b" stroke-width="1" stroke-dasharray="3 3"/>
+  <polygon points="40,90 150,70 160,170 52,190" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <line x1="20" y1="130" x2="172" y2="130" stroke="#1a1d21" stroke-width="1" stroke-dasharray="5 3"/>
+  <line x1="60" y1="130" x2="22" y2="130" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <line x1="140" y1="130" x2="178" y2="130" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="20" y="152" font-size="16" font-style="italic" fill="#1f5f8b">−<tspan font-weight="bold">F</tspan></text>
+  <text x="150" y="152" font-size="16" font-style="italic" fill="#1f5f8b"><tspan font-weight="bold">F</tspan></text>
+  <text x="46" y="222" font-size="12" font-family="sans-serif" fill="#565d66">大きさが等しく逆向き</text>
+  <polygon points="214,90 324,70 334,170 226,190" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <line x1="196" y1="104" x2="346" y2="104" stroke="#1a1d21" stroke-width="1" stroke-dasharray="5 3"/>
+  <line x1="196" y1="158" x2="346" y2="158" stroke="#1a1d21" stroke-width="1" stroke-dasharray="5 3"/>
+  <line x1="240" y1="158" x2="200" y2="158" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <line x1="304" y1="104" x2="344" y2="104" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="198" y="180" font-size="16" font-style="italic" fill="#1f5f8b">−<tspan font-weight="bold">F</tspan></text>
+  <text x="320" y="96" font-size="16" font-style="italic" fill="#1f5f8b"><tspan font-weight="bold">F</tspan></text>
+  <path d="M296,128 A26,26 0 1 1 262,112" fill="none" stroke="#1a1d21" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="214" y="222" font-size="12" font-family="sans-serif" fill="#565d66">偶力：モーメントが残る</text>
+</svg>

@@ -1,8 +1,9 @@
 /* 責務: 出すカードの絞り込み（§2.3）・ホームの数と溜まり（§2.2・§11）・今日の並び（§2.2 の (1)〜(3)）・早出しと終わりの表示（§2.2・§11）。
    依存: ./day.js・./scheduler.js（期日の判定）・./record.js（既定の設定）。
    注意: 記録の引き当ては Object.hasOwn（§4.1）。学習中の早出しと終わりの表示は「次の午前4時より前」の学習中だけを見る（§11）。
-   opts.selfPaced（§13.5。デッキの口を main.js が渡す）なら章の設定を当てず、新しいカードの1日の上限も当てない。session.flow は
-   "mixed"（今までの「始める」）・"review"（復習する。新しいカードを出さない）・"new"（新しく進める。新しいカードだけ、session.chapter があればその章だけ）。 */
+   問題集のカード（pack が null でない）はどの数にも入れない（settings.pack は読まない。§14.6・§14.9）。
+   opts.plan（§14.3・§14.12。plan のデッキ）なら本編（pack が null）だけ・settings.rangeOff で章を外す（settings.chapters は使わない）。
+   新しいカードの枚数 opts.newLimit と (4) 2周目の id の列 opts.round2Ids は plan.js で数えて渡す（並べ直すときは呼ぶ側がその時刻で数え直す）。 */
 import { logicalDay, nextDayStart } from "./day.js";
 import { isDue } from "./scheduler.js";
 import { defaultSettings } from "./record.js";
@@ -27,16 +28,19 @@ export function chapterList(cards) {
   return [...new Set(cards.map((c) => c.chapter))].sort((a, b) => a - b);
 }
 
-/** 選んでいる物（§13.4）・章の設定・★だけ・余裕ありを除く・札（§12.3）を当てて出すカードか（§2.3）。
-    settings.pack（無い・null＝本編）と同じ pack のカードだけ。本編は章の設定を当て、問題集は章に従わない。 */
+/** 章の設定・★だけ・余裕ありを除く・札（§12.3）を当てて出すカードか（§2.3）。本編（pack が null）のカードだけ（§14.6・§14.9）。
+    opts.plan なら「出す本編のカード」（§14.3）: 章は settings.chapters でなく settings.rangeOff に無い物。 */
 export function isEligible(card, settings, opts = {}) {
-  const pack = settings.pack ?? null;
-  if ((card.pack ?? null) !== pack) {
-    return false;
-  }
   const key = String(card.chapter);
-  if (pack === null && !opts.selfPaced && !(Object.hasOwn(settings.chapters, key) && settings.chapters[key] === true)) {
-    return false; // 本編は章の設定を当てる（自分で進めるデッキは当てない。§13.5・§13.10）
+  if ((card.pack ?? null) !== null) {
+    return false; // 問題集のカードは本編のどの数にも入れない（§14.6・§14.12。r8 の settings.pack は読まない）
+  }
+  if (opts.plan) {
+    if (Array.isArray(settings.rangeOff) && settings.rangeOff.includes(key)) {
+      return false; // 本編の範囲で外した章（§14.7）
+    }
+  } else if (!(Object.hasOwn(settings.chapters, key) && settings.chapters[key] === true)) {
+    return false; // 章の設定を当てる（§2.3）
   }
   if (settings.starOnly && !card.star) {
     return false;
@@ -54,6 +58,19 @@ export function isEligible(card, settings, opts = {}) {
 function remaining(limit, doneMap, today) {
   const done = Object.hasOwn(doneMap, today) ? doneMap[today] : 0;
   return Math.max(0, limit - done);
+}
+
+/** 今日の新しいカードの残りの枠: opts.newLimit（plan.js が数えた数）があればそれ、ほかは newPerDay − newIntroduced[今日]。 */
+function newLeftOf(settings, record, today, opts) {
+  if (Number.isInteger(opts.newLimit)) {
+    return Math.max(0, opts.newLimit);
+  }
+  return record ? remaining(settings.newPerDay, record.newIntroduced, today) : settings.newPerDay;
+}
+
+/** (4) 2周目の id の列（plan のデッキで plan.js が今日の残りまで数えて渡す。§14.3）。無ければ空。 */
+function round2Of(opts) {
+  return opts.plan && Array.isArray(opts.round2Ids) ? opts.round2Ids : [];
 }
 
 const byDueThenOrder = (a, b) => (a.due - b.due) || (a.card.order - b.card.order);
@@ -99,13 +116,13 @@ export function homeCounts(cards, record, nowMs, opts = {}) {
   const { settings, learning, reviews, fresh } = classify(cards, record, nowMs, opts);
   const today = logicalDay(nowMs);
   const reviewLeft = record ? remaining(settings.reviewPerDay, record.reviewsDone, today) : settings.reviewPerDay;
-  const newLeft = record ? remaining(settings.newPerDay, record.newIntroduced, today) : settings.newPerDay;
+  const newLeft = newLeftOf(settings, record, today, opts);
   const chapters = chapterList(cards);
   const chaptersOn = chapters.filter((ch) => Object.hasOwn(settings.chapters, String(ch)) && settings.chapters[String(ch)] === true).length;
   const backlog = Math.max(0, reviews.length - reviewLeft);
   return {
     review: Math.min(reviews.length, reviewLeft) + learning.length,
-    newCount: opts.selfPaced ? fresh.length : Math.min(fresh.length, newLeft),
+    newCount: Math.min(fresh.length, newLeft),
     dueReviews: reviews.length,
     dueLearning: learning.length,
     backlog,
@@ -115,24 +132,18 @@ export function homeCounts(cards, record, nowMs, opts = {}) {
   };
 }
 
-/** 「始める」で並べる: 固定の列＝(2) 期日の来た復習（上限まで）→ (3) 新しいカード（枠まで）。(1) は nextCardId のたびに並べ直す。
-    front は「1つ戻す」で先頭に出すカード、day は並べた論理日（午前4時をまたいだら並べ直す）。 */
+/** 「始める」で並べる: 固定の列＝(2) 期日の来た復習（上限まで）→ (3) 新しいカード（枠まで）→ (4) 2周目（opts.plan のときの opts.round2Ids）。
+    (1) は nextCardId のたびに並べ直す。front は「1つ戻す」で先頭に出すカード、day は並べた論理日（午前4時をまたいだら並べ直す）。 */
 export function buildSession(cards, record, nowMs, opts = {}) {
   const { settings, reviews, fresh } = classify(cards, record, nowMs, opts);
   const today = logicalDay(nowMs);
-  const flow = opts.flow ?? "mixed";
-  const chapter = flow === "new" && Number.isInteger(opts.chapter) ? opts.chapter : null;
   const reviewLeft = record ? remaining(settings.reviewPerDay, record.reviewsDone, today) : settings.reviewPerDay;
-  const newLeft = opts.selfPaced ? Infinity : (record ? remaining(settings.newPerDay, record.newIntroduced, today) : settings.newPerDay);
-  const freshIds = fresh.filter((c) => chapter === null || c.chapter === chapter).slice(0, newLeft).map((c) => c.id);
+  const newLeft = newLeftOf(settings, record, today, opts);
+  const freshIds = fresh.slice(0, newLeft).map((c) => c.id);
   const reviewIds = reviews.slice(0, reviewLeft).map((x) => x.card.id);
-  const fixed = flow === "review" ? reviewIds : flow === "new" ? freshIds : [...reviewIds, ...freshIds];
-  return { fixed, front: null, day: today, flow, chapter };
-}
-
-/** 流れの opts（session から。buildSession・refreshSession に渡す）。 */
-function flowOpts(session, opts) {
-  return { ...opts, flow: session.flow ?? "mixed", chapter: session.chapter ?? null };
+  const taken = new Set([...reviewIds, ...freshIds]);
+  const round2Ids = round2Of(opts).filter((id) => !taken.has(id)); // (1)(2) と二重に出さない（§14.12）
+  return { fixed: [...reviewIds, ...freshIds, ...round2Ids], front: null, day: today };
 }
 
 /** 学習の途中で午前4時をまたいだら並べ直す（§11）。front（1つ戻したカード）は残し、その枠を新しい並びから引く（withFront）。 */
@@ -140,7 +151,7 @@ export function refreshSession(session, cards, record, nowMs, opts = {}) {
   if (session.day === logicalDay(nowMs)) {
     return session;
   }
-  const rebuilt = buildSession(cards, record, nowMs, flowOpts(session, opts));
+  const rebuilt = buildSession(cards, record, nowMs, opts);
   const front = session.front ?? null;
   return front === null ? rebuilt : withFront(rebuilt, front, cards, record, nowMs, opts);
 }
@@ -149,9 +160,6 @@ export function refreshSession(session, cards, record, nowMs, opts = {}) {
 export function nextCardId(session, cards, record, nowMs, opts = {}) {
   if (session.front !== null && session.front !== undefined) {
     return session.front;
-  }
-  if (session.flow === "new") {
-    return session.fixed.length > 0 ? session.fixed[0] : null; // 学習中になったカードは「復習する」に入る（§13.5）
   }
   const { learning, pending } = classify(cards, record, nowMs, opts);
   if (learning.length > 0) {
@@ -172,13 +180,17 @@ export function markRated(session, id) {
   return { ...session, fixed: session.fixed.filter((x) => x !== id), front: session.front === id ? null : (session.front ?? null) };
 }
 
-/** 評価したときに数える枠: "new"（newIntroduced）・"review"（reviewsDone）・null（学習中。review.js の applyRating と同じ分け方）。 */
-function slotOf(record, id) {
+/** 評価したときに数える枠: "new"（newIntroduced）・"review"（reviewsDone）・null（学習中。review.js の applyRating と同じ分け方）。
+    opts.plan なら state 2 は期日が来ていれば "review"、来ていなければ "r2"（2周目。§14.3 の (4)）。 */
+function slotOf(record, id, nowMs, opts) {
   const entry = entryOf(record, id);
   if (isNewEntry(entry)) {
     return "new";
   }
-  return entry.state === 2 ? "review" : null;
+  if (entry.state !== 2) {
+    return null;
+  }
+  return !opts.plan || isDue(entry, nowMs) ? "review" : "r2";
 }
 
 /** 1つ戻したカードを先頭に出す（§11: その後は戻す前の残りの並びを続ける）。
@@ -188,11 +200,12 @@ export function withFront(session, id, cards, record, nowMs, opts = {}) {
   const today = logicalDay(nowMs);
   const settings = record ? record.settings : defaultSettings();
   const left = {
-    new: opts.selfPaced ? Infinity : (record ? remaining(settings.newPerDay, record.newIntroduced, today) : settings.newPerDay),
+    new: newLeftOf(settings, record, today, opts),
     review: record ? remaining(settings.reviewPerDay, record.reviewsDone, today) : settings.reviewPerDay,
+    r2: round2Of(opts).length,
   };
-  const used = { new: 0, review: 0 };
-  const frontSlot = slotOf(record, id);
+  const used = { new: 0, review: 0, r2: 0 };
+  const frontSlot = slotOf(record, id, nowMs, opts);
   if (frontSlot !== null) {
     used[frontSlot] += 1; // front は枠が残っていなくても出す（§4.6「表から出し直す」）
   }
@@ -201,7 +214,7 @@ export function withFront(session, id, cards, record, nowMs, opts = {}) {
     if (x === id) {
       continue;
     }
-    const slot = slotOf(record, x);
+    const slot = slotOf(record, x, nowMs, opts);
     if (slot !== null) {
       if (used[slot] >= left[slot]) {
         continue;
@@ -213,7 +226,8 @@ export function withFront(session, id, cards, record, nowMs, opts = {}) {
   return { ...session, fixed: kept, front: id };
 }
 
-/** 明日の復習（§11）: 明日の論理日の終わりまでに期日が来る state 2 の数（今日やり残した分を含む。章の設定と絞り込みを当て、上限で切らない）。 */
+/** 明日の復習（§11）: 明日の論理日の終わりまでに期日が来る state 2 の数（今日やり残した分を含む。章の設定と絞り込みを当て、上限で切らない。
+    opts.plan なら出す本編のカード（rangeOff と絞り込み）だけ。§14.12）。 */
 export function tomorrowReviews(cards, record, nowMs, opts = {}) {
   if (!record) {
     return 0;
@@ -240,29 +254,4 @@ export function endState(cards, record, nowMs, opts = {}) {
     return { kind: "later", at, count: today.filter((x) => x.due <= at).length };
   }
   return { kind: "done", tomorrow: tomorrowReviews(cards, record, nowMs, opts) };
-}
-
-/** 章ごとの新しいカードの残り（§13.5 の「章を選ぶ」）: [{chapter, left}]（カードのある章を番号の順に。絞り込みを当てる）。 */
-export function chapterProgress(cards, record, opts = {}) {
-  const settings = record ? record.settings : defaultSettings();
-  const left = new Map(chapterList(cards).map((ch) => [ch, 0]));
-  for (const card of cards) {
-    if (isEligible(card, settings, opts) && isNewEntry(entryOf(record, card.id))) {
-      left.set(card.chapter, left.get(card.chapter) + 1);
-    }
-  }
-  return [...left].map(([chapter, n]) => ({ chapter, left: n }));
-}
-
-/** 続きの位置（§13.5・§13.10）: {chapter, k（その章の絞り込みを当てたカードの order の順で何枚目か）, total（全部の新しいカードの数）}。無ければ null。 */
-export function continuePoint(cards, record, opts = {}) {
-  const settings = record ? record.settings : defaultSettings();
-  const eligible = cards.filter((c) => isEligible(c, settings, opts)).sort((a, b) => a.order - b.order);
-  const fresh = eligible.filter((c) => isNewEntry(entryOf(record, c.id)));
-  if (fresh.length === 0) {
-    return null;
-  }
-  const first = fresh[0];
-  const k = eligible.filter((c) => c.chapter === first.chapter).findIndex((c) => c.id === first.id) + 1;
-  return { chapter: first.chapter, k, total: fresh.length };
 }

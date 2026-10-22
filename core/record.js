@@ -1,8 +1,9 @@
-/* 責務: 記録の形（SPEC §4.2）・既定値と上限の入力（§2.3・§11）・作成（§4.7）・保存の前の刈り込み・§4.8 の検査（読み込みと起動と保存前で同じ関数）と直して読む物・退避の形（§4.9）。
-   依存: ./day.js、./scheduler.js（項目の欄の一覧）。
-   注意: 正規表現は [0-9] と m なしの ^…$（§3）。文字列か先に確かめてから test する（RegExp.test は数を文字列に直して通してしまう）。キーは検査してから代入する（__proto__ などを入れない）。 */
+/* 責務: 記録の形（SPEC §4.2・§14.8・§14.12 の plan の欄）・既定値と上限の入力（§2.3・§11）・作成（§4.7）・保存の前の刈り込み・§4.8 の検査（読み込みと起動と保存前で同じ関数）と直して読む物・退避の形（§4.9）。
+   依存: ./day.js、./scheduler.js（項目の欄の一覧）、./fields.js（章のキーの上限の既定 30。分野のあるデッキは呼ぶ側が 999 を渡す。§14.12）。
+   注意: 正規表現は [0-9] と m なしの ^…$（§3）。文字列か先に確かめてから test する（RegExp.test は数を文字列に直して通してしまう）。キーは検査してから代入する（__proto__ などを入れない）。plan の欄は省略可で、無いときは補わない（化学の形を変えない）。 */
 import { logicalDay, addDays } from "./day.js";
 import { ENTRY_FIELDS } from "./scheduler.js";
+import { CHAPTER_MAX_PLAIN } from "./fields.js";
 
 export const SCHEMA = 1;
 export const LOG_MAX = 5000;
@@ -12,13 +13,26 @@ export const BROKEN_RAW_MAX = 600000; // 退避の raw の上限の文字数（�
 export const ID_RE = /^[A-Za-z0-9-]{1,40}$/;
 const ISO_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?Z$/;
 const DAY_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
-const CHAPTER_KEY_RE = /^(0|[1-9][0-9]?)$/;
+const CHAPTER_KEY_RE = /^(0|[1-9][0-9]{0,2})$/; // 上限は検査の引数 chapterMax（化学 30・分野のあるデッキ 999。§14.2）
 const HASH_RE = /^[0-9a-f]{8}$/;
 const PATH_KEY_RE = /^[A-Za-z0-9-]+$/;
 const SURROGATE_RE = /[\uD800-\uDFFF]/;
 const MAX_TIME_MS = 8.64e15; // Date で表せる最大（log の t・undo の t の上限）
 const INT_FIELDS = ["elapsed_days", "scheduled_days", "learning_steps", "reps", "lapses"];
 const SETTINGS_FIELDS = ["chapters", "starOnly", "excludeYoyu", "newPerDay", "reviewPerDay"];
+/** settings の省略できる欄（§12.3 の tags・§13.4 の pack・§14.8 の plan の欄）。 */
+const SETTINGS_OPTIONAL = ["tags", "pack", "goal1", "goal2", "round2Mode", "rangeOff", "practice"];
+/** plan の欄の個数の上限（§14.8）。 */
+export const RANGE_MAX = 1000; // rangeOff・practice.chapters
+export const PRACTICE_TAGS_MAX = 20;
+export const PACKS_MAX = 20;
+export const PACK_IDS_MAX = 500; // packs の done・miss のそれぞれ
+export const NOTICE_OFF_MAX = 20; // planNoticeOff（検査では超えたら形の違い。§14.12）
+/** 分野の id（§14.1。round2Start のキー・undo.r2s）。 */
+export const FIELD_ID_RE = /^[a-z]{2,12}$/;
+const NOTICE_OFF_RE = /^r[12]:[0-9]{4}-[0-9]{2}-[0-9]{2}:[0-9]{1,2}$/;
+/** plan のデッキで記録を作るときの新しいカードの上限の既定（§14.3。createRecord の newPerDay に渡す）。 */
+export const PLAN_NEW_DEFAULT = 30;
 
 export function defaultSettings() {
   return { chapters: {}, starOnly: false, excludeYoyu: false, newPerDay: 10, reviewPerDay: 120 };
@@ -87,9 +101,13 @@ export function keyPath(base, key) {
 }
 
 /** 記録を作る（§4.7）。chapters は cards.json にある章を全部「出さない」で入れる。hashes は {id: 8桁}。
-    deckId は bareRecord が偽のデッキ（物理）だけが渡す（化学の記録の形は変えない。§12.8）。 */
-export function createRecord({ cards, edition, hashes, nowMs, deckId = null }) {
+    deckId は bareRecord が偽のデッキ（物理）だけが渡す（化学の記録の形は変えない。§12.8）。
+    newPerDay は新しいカードの上限の既定を変えるときだけ渡す（plan のデッキは PLAN_NEW_DEFAULT＝30。§14.3）。 */
+export function createRecord({ cards, edition, hashes, nowMs, deckId = null, newPerDay = null }) {
   const settings = defaultSettings();
+  if (newPerDay !== null) {
+    settings.newPerDay = newPerDay;
+  }
   for (const ch of [...new Set(cards.map((c) => c.chapter))].sort((a, b) => a - b)) {
     settings.chapters[String(ch)] = false;
   }
@@ -135,17 +153,27 @@ function pruneDayMap(map, oldestKept) {
   return out;
 }
 
-/** 保存の直前の刈り込み: log は新しい方 5,000 件、days は昇順・重複なし・新しい方 400 件、日のキーは今日〜29 日前と未来を残す。 */
+/** plan の日のキーの数（§14.8・§14.12。newIntroduced と同じ形・同じ刈り込み）。省略可。 */
+export const PLAN_DAY_MAPS = Object.freeze(["round2Seen", "planNew", "practiceDone"]);
+
+/** 保存の直前の刈り込み: log は新しい方 5,000 件、days は昇順・重複なし・新しい方 400 件、日のキーは今日〜29 日前と未来を残す
+    （plan の日のキーの数も、あるときだけ同じに刈る。無ければ足さない）。 */
 export function prepareForSave(record, nowMs) {
   const oldestKept = addDays(logicalDay(nowMs), -(KEEP_DAY_KEYS - 1));
   const days = [...new Set(record.days)].sort();
-  return {
+  const out = {
     ...record,
     log: record.log.length > LOG_MAX ? record.log.slice(record.log.length - LOG_MAX) : record.log,
     days: days.length > DAYS_MAX ? days.slice(days.length - DAYS_MAX) : days,
     newIntroduced: pruneDayMap(record.newIntroduced, oldestKept),
     reviewsDone: pruneDayMap(record.reviewsDone, oldestKept),
   };
+  for (const k of PLAN_DAY_MAPS) {
+    if (Object.hasOwn(record, k) && isPlainObject(record[k])) {
+      out[k] = pruneDayMap(record[k], oldestKept);
+    }
+  }
+  return out;
 }
 
 const ENTRY_CHECKS = {
@@ -229,7 +257,49 @@ function checkEntryAt(e, base) {
   }
 }
 
-function validSettings(s, rep) {
+/** 章のキーの文字列（§14.2。"0"〜上限）。 */
+function isChapterKey(x, chapterMax) {
+  return typeof x === "string" && CHAPTER_KEY_RE.test(x) && Number(x) <= chapterMax;
+}
+
+/** 重複なし・max 個までの配列（§14.8）。違反は配列そのもの（配列でない・多すぎる）か要素の場所 [n]（形が違う・前と重なる）。 */
+function checkUniqueList(v, base, max, ok) {
+  if (!Array.isArray(v) || v.length > max) {
+    fail(base);
+  }
+  const seen = new Set();
+  v.forEach((x, n) => {
+    if (!ok(x) || seen.has(x)) {
+      fail(`${base}[${n}]`);
+    }
+    seen.add(x);
+  });
+  return [...v];
+}
+
+/** settings.practice（§14.8: 練習の前回の範囲）。chapters は §14.2 の範囲の整数だけを見る（今のカードに無い章も通す。§14.12）。 */
+function validPractice(v, base, rep, chapterMax) {
+  if (!isPlainObject(v)) {
+    fail(base);
+  }
+  for (const pk of Object.keys(v)) {
+    if (pk === "chapters") {
+      checkUniqueList(v.chapters, `${base}.chapters`, RANGE_MAX, (x) => Number.isInteger(x) && x >= 0 && x <= chapterMax);
+    } else if (pk === "tags") {
+      checkUniqueList(v.tags, `${base}.tags`, PRACTICE_TAGS_MAX, (x) => typeof x === "string" && TAG_ID_RE.test(x));
+    } else if (pk === "which" && v.which !== "all" && v.which !== "miss") {
+      fail(`${base}.which`);
+    }
+  }
+  for (const f of ["chapters", "tags", "which"]) {
+    if (!Object.hasOwn(v, f)) {
+      fail(`${base}.${f}`);
+    }
+  }
+  noteExtras(v, ["chapters", "tags", "which"], rep);
+}
+
+function validSettings(s, rep, chapterMax) {
   const base = "record.settings";
   if (!isPlainObject(s)) {
     fail(base);
@@ -241,10 +311,22 @@ function validSettings(s, rep) {
         fail(`${base}.chapters`);
       }
       for (const ck of Object.keys(v)) {
-        if (!(CHAPTER_KEY_RE.test(ck) && Number(ck) <= 30 && typeof v[ck] === "boolean")) {
+        if (!(CHAPTER_KEY_RE.test(ck) && Number(ck) <= chapterMax && typeof v[ck] === "boolean")) {
           fail(keyPath(`${base}.chapters`, ck));
         }
       }
+    } else if (k === "goal1" || k === "goal2") {
+      if (!(v === null || isDayKey(v))) {
+        fail(`${base}.${k}`); // 目標日（null＝決めていない。§14.8）
+      }
+    } else if (k === "round2Mode") {
+      if (v !== "all" && v !== "miss") {
+        fail(`${base}.round2Mode`);
+      }
+    } else if (k === "rangeOff") {
+      checkUniqueList(v, `${base}.rangeOff`, RANGE_MAX, (x) => isChapterKey(x, chapterMax)); // 今のカードに無い章も通す（§14.12）
+    } else if (k === "practice") {
+      validPractice(v, `${base}.practice`, rep, chapterMax);
     } else if (k === "starOnly" || k === "excludeYoyu") {
       if (typeof v !== "boolean") {
         fail(`${base}.${k}`);
@@ -273,7 +355,7 @@ function validSettings(s, rep) {
       fail(`${base}.${f}`);
     }
   }
-  noteExtras(s, [...SETTINGS_FIELDS, "tags", "pack"], rep);
+  noteExtras(s, [...SETTINGS_FIELDS, ...SETTINGS_OPTIONAL], rep);
   const chapters = {};
   for (const ck of Object.keys(s.chapters)) {
     chapters[ck] = s.chapters[ck];
@@ -284,6 +366,19 @@ function validSettings(s, rep) {
   }
   if (Object.hasOwn(s, "pack")) {
     out.pack = s.pack; // 無いときは補わない（化学の記録の形を変えない。今の deck に無い id は main.js が本編として読む。§13.10）
+  }
+  // plan の欄（§14.8）も、無いときは補わない（化学の記録の形を変えない・repaired にしない）
+  for (const k of ["goal1", "goal2", "round2Mode"]) {
+    if (Object.hasOwn(s, k)) {
+      out[k] = s[k];
+    }
+  }
+  if (Object.hasOwn(s, "rangeOff")) {
+    out.rangeOff = [...s.rangeOff];
+  }
+  if (Object.hasOwn(s, "practice")) {
+    const p = s.practice; // 形は上の validPractice で見た（余分なキーは捨てる）
+    out.practice = { chapters: [...p.chapters], tags: [...p.tags], which: p.which };
   }
   return out;
 }
@@ -428,6 +523,8 @@ function validDays(days, rep) {
 }
 
 const UNDO_FIELDS = ["id", "before", "wasNew", "wasReview", "day", "t"];
+/** undo の省略できる印（§14.4・§14.12）: p＝練習の答え・r2＝round2Seen を数えた・pn＝planNew を数えた（真偽）、r2s＝round2Start に書いた分野の id。 */
+const UNDO_MARKS = ["p", "r2", "pn"];
 
 function validUndo(u, rep) {
   if (u === null) {
@@ -449,6 +546,10 @@ function validUndo(u, rep) {
       fail(`${base}.day`);
     } else if (k === "t" && !isPosTime(v)) {
       fail(`${base}.t`);
+    } else if (UNDO_MARKS.includes(k) && typeof v !== "boolean") {
+      fail(`${base}.${k}`);
+    } else if (k === "r2s" && !(typeof v === "string" && FIELD_ID_RE.test(v))) {
+      fail(`${base}.r2s`);
     }
   }
   for (const f of UNDO_FIELDS) {
@@ -456,14 +557,81 @@ function validUndo(u, rep) {
       fail(`${base}.${f}`);
     }
   }
-  noteExtras(u, UNDO_FIELDS, rep);
+  noteExtras(u, [...UNDO_FIELDS, ...UNDO_MARKS, "r2s"], rep);
   if (u.before !== null) {
     noteExtras(u.before, ENTRY_FIELDS, rep);
   }
-  return { id: u.id, before: u.before === null ? null : pickEntry(u.before), wasNew: u.wasNew, wasReview: u.wasReview, day: u.day, t: u.t };
+  const out = { id: u.id, before: u.before === null ? null : pickEntry(u.before), wasNew: u.wasNew, wasReview: u.wasReview, day: u.day, t: u.t };
+  for (const k of [...UNDO_MARKS, "r2s"]) {
+    if (Object.hasOwn(u, k)) {
+      out[k] = u[k]; // 無いときは補わない（化学の undo の形を変えない）
+    }
+  }
+  return out;
 }
 
-const TOP_FIELDS = ["schema", "createdAt", "lastExportAt", "deck", "settings", "cards", "newIntroduced", "reviewsDone", "days", "log", "undo", "deckId"];
+/** round2Start（§14.12: {分野の id: ISO}。分野の無いデッキでは使わない）。 */
+function validRound2Start(v) {
+  const base = "record.round2Start";
+  if (!isPlainObject(v)) {
+    fail(base);
+  }
+  const out = {};
+  for (const k of Object.keys(v)) {
+    if (!(FIELD_ID_RE.test(k) && isIso(v[k]))) {
+      fail(keyPath(base, k));
+    }
+    out[k] = v[k];
+  }
+  return out;
+}
+
+/** packs（§14.6・§14.8: {問題集の id: {done: [id…], miss: [id…]}}。今のデッキに無い問題集・カードの id も通して残す）。 */
+function validPacks(v, rep) {
+  const base = "record.packs";
+  if (!isPlainObject(v) || Object.keys(v).length > PACKS_MAX) {
+    fail(base);
+  }
+  const out = {};
+  for (const k of Object.keys(v)) {
+    const at = keyPath(base, k);
+    const ent = v[k];
+    if (!TAG_ID_RE.test(k) || !isPlainObject(ent)) {
+      fail(at);
+    }
+    for (const f of Object.keys(ent)) {
+      if (f === "done" || f === "miss") {
+        checkUniqueList(ent[f], `${at}.${f}`, PACK_IDS_MAX, isId);
+      }
+    }
+    for (const f of ["done", "miss"]) {
+      if (!Object.hasOwn(ent, f)) {
+        fail(`${at}.${f}`);
+      }
+    }
+    noteExtras(ent, ["done", "miss"], rep);
+    out[k] = { done: [...ent.done], miss: [...ent.miss] };
+  }
+  return out;
+}
+
+/** planNoticeOff（§14.8・§14.12: 上限の知らせを消した印の配列。20 個を超えたら形の違い）。 */
+function validNoticeOff(v) {
+  const base = "record.planNoticeOff";
+  if (!Array.isArray(v) || v.length > NOTICE_OFF_MAX) {
+    fail(base);
+  }
+  v.forEach((x, n) => {
+    if (!(typeof x === "string" && NOTICE_OFF_RE.test(x))) {
+      fail(`${base}[${n}]`);
+    }
+  });
+  return [...v];
+}
+
+/** 最上位の省略できる plan の欄（§14.8・§14.12）。検査はこの順（今の順の後ろ）。 */
+const PLAN_TOP = ["round2Start", "round2Seen", "planNew", "practiceDone", "packs", "planNoticeOff"];
+const TOP_FIELDS = ["schema", "createdAt", "lastExportAt", "deck", "settings", "cards", "newIntroduced", "reviewsDone", "days", "log", "undo", "deckId", ...PLAN_TOP];
 
 /** 省略可の欄: あれば検査して返し、無ければ既定値で補って repaired を立てる。 */
 function optional(obj, key, fallback, check, rep) {
@@ -477,10 +645,13 @@ function optional(obj, key, fallback, check, rep) {
 /**
  * §4.8 の検査と直して読む（読み込み・起動時・保存の前で同じ関数）。
  * 返り値: {ok: true, record, repaired} / {ok: false, kind: "newer", schema} / {ok: false, kind: "shape", where}。
- * 検査の順番（A51）: schema → createdAt → settings → cards → log → lastExportAt → deck → newIntroduced → reviewsDone → days → undo。
+ * 検査の順番（A51）: schema → createdAt → settings → cards → log → lastExportAt → deck → newIntroduced → reviewsDone → days → undo
+ * → deckId → round2Start → round2Seen → planNew → practiceDone → packs → planNoticeOff（plan の欄は §14.8・§14.12。あるときだけ）。
  * 配列は先頭から、オブジェクトはキーの出現順、1つの項目は書かれている欄 → 無い欄 → 組み合わせ。最初に見つけた1つを返す。
+ * opts.chapterMax は章のキーの上限（既定 30＝化学。分野のあるデッキは 999。読み込み・起動・保存の前で同じ値を渡す。§14.12）。
  */
-export function validateRecord(obj) {
+export function validateRecord(obj, opts = {}) {
+  const chapterMax = opts.chapterMax ?? CHAPTER_MAX_PLAIN;
   if (!isPlainObject(obj)) {
     return { ok: false, kind: "shape", where: "record" };
   }
@@ -501,7 +672,7 @@ export function validateRecord(obj) {
     if (!Object.hasOwn(obj, "settings")) {
       fail("record.settings");
     }
-    const settings = validSettings(obj.settings, rep);
+    const settings = validSettings(obj.settings, rep, chapterMax);
     if (!Object.hasOwn(obj, "cards")) {
       fail("record.cards");
     }
@@ -525,11 +696,29 @@ export function validateRecord(obj) {
     if (Object.hasOwn(obj, "deckId") && !(typeof obj.deckId === "string" && DECK_ID_RE.test(obj.deckId))) {
       fail("record.deckId");
     }
+    // plan の欄（§14.8・§14.12）は省略できる（無いのは化学の記録の形。補わない＝repaired に数えない）
+    const plan = {};
+    for (const k of PLAN_TOP) {
+      if (!Object.hasOwn(obj, k)) {
+        continue;
+      }
+      const v = obj[k];
+      if (k === "round2Start") {
+        plan[k] = validRound2Start(v);
+      } else if (k === "packs") {
+        plan[k] = validPacks(v, rep);
+      } else if (k === "planNoticeOff") {
+        plan[k] = validNoticeOff(v);
+      } else {
+        plan[k] = validDayMap(v, `record.${k}`);
+      }
+    }
     noteExtras(obj, TOP_FIELDS, rep);
     const record = { schema: SCHEMA, createdAt: obj.createdAt, lastExportAt, deck, settings, cards, newIntroduced, reviewsDone, days, log, undo };
     if (Object.hasOwn(obj, "deckId")) {
       record.deckId = obj.deckId;
     }
+    Object.assign(record, plan);
     return { ok: true, record, repaired: rep.flag };
   } catch (e) {
     if (e instanceof Shape) {
@@ -540,8 +729,8 @@ export function validateRecord(obj) {
 }
 
 /** 保存の前の検査（§4.2「アプリが書く記録は常に §4.8 の検査に通る」）。違反の場所（record.… の形）、通れば null。 */
-export function checkForSave(record) {
-  const v = validateRecord(record);
+export function checkForSave(record, opts = {}) {
+  const v = validateRecord(record, opts);
   if (v.ok) {
     return null;
   }
@@ -549,15 +738,15 @@ export function checkForSave(record) {
 }
 
 /** 起動時の osakaCards.v1 の読み取り（§4.8 と同じ規則・直して読む）。
-    {kind: "ok", record, repaired} / {kind: "newer", schema} / {kind: "bad", where}（where は "JSON" か record.… の場所）。 */
-export function parseStoredRecord(raw) {
+    {kind: "ok", record, repaired} / {kind: "newer", schema} / {kind: "bad", where}（where は "JSON" か record.… の場所）。opts は validateRecord と同じ（chapterMax）。 */
+export function parseStoredRecord(raw, opts = {}) {
   let obj;
   try {
     obj = JSON.parse(raw);
   } catch {
     return { kind: "bad", where: "JSON" };
   }
-  const v = validateRecord(obj);
+  const v = validateRecord(obj, opts);
   if (v.ok) {
     return { kind: "ok", record: v.record, repaired: v.repaired };
   }

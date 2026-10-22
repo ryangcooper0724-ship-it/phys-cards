@@ -1,14 +1,16 @@
-/* 責務: ホームの画面（今日の復習・新しいカード・溜まり・出す章・冊子の版・始める・1つ戻す・週の報告と催促・統計・使い方・設定。SPEC §2.2・§2.5・§10・§11）。
-   依存: ../dom.js、../report_panel.js、../../core/queue.js、../../core/report.js（催促）、../../core/deck.js（版の知らせ）。app（main.js の状態と操作）を受け取る。
-   見た目: 数は大きな数字のタイル、今日の進み具合のバー（今日こなした枠 ÷ 今日の予定）と連続日数のバッジ（記録があるときだけ）。
-   注意: 記録が無い間は「始める」「統計」「週の報告」を押せない（§2.0）。「1つ戻す」は undo があるときだけ（§11）。「新しい版があります」はホームにだけ出す（§2.7）。起動で記録を読めなかった（app.readFailed）間は週の報告を押せない（A113）。 */
+/* 責務: ホームの画面。化学: 今日の復習・新しいカード・溜まり・出す章・冊子の版・始める・1つ戻す・週の報告と催促・統計・使い方・設定（SPEC §2.2・§2.5・§10・§11）。
+   plan のデッキ（物理。§14.3・§14.4・§14.6）: 「本編」の段（今日の分の数・2周目・上限の知らせ・今日の分を始める）・「もっと解く（練習）」の2つ・問題集ごとの段。
+   依存: ../dom.js、../report_panel.js、../../core/queue.js・plan.js・stats.js・report.js（催促）・deck.js（版の知らせ）。app（main.js の状態と操作）を受け取る。
+   注意: 記録が無い間は「始める」（化学）「統計」「週の報告」を押せない（§2.0・§14.3）。「1つ戻す」は undo があるとき（plan のデッキは app.canUndoHome＝undo に p が無く undo.id が本編のカードのときだけ。§14.12・A231）。
+   「新しい版があります」はホームにだけ出す（§2.7）。起動で記録を読めなかった（app.readFailed）間は週の報告と、記録を作る操作を押せない（A113・禁止パターン）。 */
 import { el, bigNumber, progressBar, chapterName } from "../dom.js";
 import { DECK } from "../../deck.js";
 import { reportNote, reportPanel } from "../report_panel.js";
-import { homeCounts, continuePoint } from "../../core/queue.js";
+import { homeCounts } from "../../core/queue.js";
+import { planCounts, planQueueOpts, mistakenIds, packView, rangeSummary, emptyRange } from "../../core/plan.js";
 import { reminderText } from "../../core/report.js";
 import { deckNotice, noticeText } from "../../core/deck.js";
-import { streak } from "../../core/stats.js";
+import { streak, formatMD } from "../../core/stats.js";
 import { logicalDay } from "../../core/day.js";
 
 const READ_FAILED_HOME = "記録を読めませんでした。開き直してください（週の報告は止めています）";
@@ -57,101 +59,42 @@ function todayRow(app, c) {
   ]);
 }
 
-/** 問題集のあるデッキ: 「いまやっている」と「切り替え」（§13.4）。問題集を選んでいる間は本編の待っている復習の数。 */
-function modeRow(app) {
-  if (DECK.packs.length === 0) {
-    return null;
-  }
-  const pack = DECK.packs.find((pk) => pk.id === app.currentPack);
-  return el("div", { id: "home-mode", className: "mode-row panel" }, [
-    el("span", { className: "mode-text" }, [
-      el("span", { className: "mode-label muted", text: "いまやっている" }),
-      el("span", { id: "home-mode-name", className: "mode-name", text: pack ? pack.label : "本編" }),
-    ]),
-    el("button", { id: "home-switch", text: "切り替え", disabled: app.readFailed, on: { click: () => app.navigate("packs") } }),
-  ]);
+function backlogLine(c) {
+  return c.backlog > 0 ? el("p", { id: "home-backlog", text: `溜まり ${c.backlog} 枚（約 ${c.catchUpDays} 日で追いつく）` }) : null;
 }
 
-function waitingMain(app) {
-  if (!app.record || app.currentPack === null) {
-    return null;
-  }
-  const main = homeCounts(app.mainCards, { ...app.record, settings: { ...app.record.settings, pack: null } }, app.now(), app.queueOpts);
-  const n = main.dueReviews + main.dueLearning; // 上限で切らない（§13.10）
-  return n > 0 ? el("p", { id: "home-main-waiting", className: "muted", text: `本編の復習 ${n} 枚が待っています` }) : null;
+function editionLine(app) {
+  return el("p", { id: "home-edition", className: "muted", text: `${DECK.editionNoun}の版 ${app.edition}` });
 }
 
-/** 自分で進めるデッキの連続日数の札（「今日の進み」は出さない。§13.5）。 */
-function streakRow(app) {
-  const days = app.record ? streak(app.record.days, logicalDay(app.now())) : 0;
-  return days > 0 ? el("div", { className: "streak-row" }, [el("span", { id: "home-streak", className: "badge streak", text: `連続 ${days} 日` })]) : null;
-}
-
-/** 自分で進めるデッキ（§13.5）: 「復習 N」と「復習する」、「新しく進める」（続きの文・続きから・章を選ぶ）。 */
-function selfPacedBlocks(app, c) {
-  const point = continuePoint(app.modeCards, app.record, app.queueOpts);
-  const cont = point === null
-    ? "新しいカードは全部やりました"
-    : `続きは ${chapterName(point.chapter)} の ${point.k} 枚目から（残り ${point.total} 枚）`;
-  const blockNew = app.readFailed && !app.record; // 読めなかった起動の間は記録を作らない（§13.10）
+function topBanners(app) {
+  const remind = reminderText(app.record, app.now());
   return [
-    el("div", { id: "home-review-box", className: "panel study-box" }, [
-      el("div", { className: "study-box-head" }, [
-        el("span", { className: "study-box-title", text: "復習" }),
-        el("span", { id: "home-review-count", className: "study-box-num", text: String(c.review) }),
-      ]),
-      el("p", { className: "muted study-box-note", text: "期日の来たカードと、間違えたカード" }),
-      el("button", {
-        id: "home-review-start", className: "primary big", text: "復習する",
-        disabled: !app.record || c.review === 0, on: { click: () => app.startFlow("review") },
-      }),
-    ]),
-    el("div", { id: "home-new-box", className: "panel study-box" }, [
-      el("span", { className: "study-box-title", text: "新しく進める" }),
-      el("p", { id: "home-continue", className: "muted study-box-note", text: cont }),
-      el("div", { className: "study-box-actions" }, [
-        el("button", {
-          id: "home-continue-start", className: "primary big", text: "続きから",
-          disabled: point === null || blockNew, on: { click: () => app.startFlow("new") },
-        }),
-        el("button", { id: "home-chapters-open", className: "big", text: "章を選ぶ", disabled: blockNew, on: { click: () => app.navigate("chapters") } }),
-      ]),
-    ]),
+    swUpdateBox(app),
+    deckNoticeBox(app),
+    app.readFailed ? el("p", { id: "home-read-failed", className: "error-text", text: READ_FAILED_HOME }) : null,
+    remind ? el("p", { id: "home-remind", className: "banner", text: remind }) : null,
   ];
 }
 
-export function render(app) {
-  const c = homeCounts(app.modeCards, app.record, app.now(), app.queueOpts);
-  const selfPaced = app.queueOpts.selfPaced;
-  const packMode = app.currentPack !== null;
-  const noChapters = c.chaptersOn === 0 && !packMode && !selfPaced;
+function renderChem(app) {
+  const c = homeCounts(app.mainCards, app.record, app.now(), app.queueOpts);
+  const noChapters = c.chaptersOn === 0;
   const canUndo = Boolean(app.record && app.record.undo);
-  const remind = reminderText(app.record, app.now());
   return el("section", { id: "screen-home", className: "screen" }, [
     el("h1", { className: "app-title", text: DECK.appName }),
-    modeRow(app),
-    swUpdateBox(app),
-    deckNoticeBox(app),
-    app.readFailed
-      ? el("p", { id: "home-read-failed", className: "error-text", text: READ_FAILED_HOME })
-      : null,
-    remind ? el("p", { id: "home-remind", className: "banner", text: remind }) : null,
-    ...(selfPaced ? selfPacedBlocks(app, c) : [
-      el("div", { className: "tiles" }, [
-        el("p", { id: "home-review", className: "count tile tile-review" }, bigNumber("今日の復習", c.review)),
-        el("p", { id: "home-new", className: "count tile tile-new" }, bigNumber("新しいカード", c.newCount)),
-      ]),
+    ...topBanners(app),
+    el("div", { className: "tiles" }, [
+      el("p", { id: "home-review", className: "count tile tile-review" }, bigNumber("今日の復習", c.review)),
+      el("p", { id: "home-new", className: "count tile tile-new" }, bigNumber("新しいカード", c.newCount)),
     ]),
-    waitingMain(app),
-    selfPaced ? streakRow(app) : todayRow(app, c),
-    c.backlog > 0
-      ? el("p", { id: "home-backlog", text: `溜まり ${c.backlog} 枚（約 ${c.catchUpDays} 日で追いつく）` })
-      : null,
-    packMode || selfPaced ? null : el("p", { id: "home-chapters", text: `出す章 ${c.chaptersOn}/${c.chaptersTotal}` }),
+    todayRow(app, c),
+    backlogLine(c),
+    el("p", { id: "home-chapters", text: `出す章 ${c.chaptersOn}/${c.chaptersTotal}` }),
     noChapters ? el("p", { id: "home-settings-hint", className: "hint", text: "設定で、読んだ章を『出す』にしてください" }) : null,
-    el("p", { id: "home-edition", className: "muted", text: `${DECK.editionNoun}の版 ${app.edition}` }),
+    editionLine(app),
     el("div", { className: "actions" }, [
-      selfPaced ? null : el("button", {
+      el("button", {
         id: "home-start", className: "primary", text: "始める",
         disabled: !app.record || noChapters, on: { click: () => app.startStudy() },
       }),
@@ -169,4 +112,148 @@ export function render(app) {
     reportNote(app),
     reportPanel(app),
   ]);
+}
+
+// ---- plan のデッキ（§14.3・§14.4・§14.6。モック inject_v3.js の home()） ----
+
+/** 「本編」の段の数の行（§14.3・§14.12）:「復習 N・新しい Q（1 周目 M/D までの日割り）」と、2周目の間は「・2 周目 Q2（M/D までの日割り）」。
+    目標日が無いときは「新しい N（1 日 C 枚）」。1周目が終わって2周目が始まっていれば1周目の部分は出さない。 */
+function planLine(c, p) {
+  const parts = [`復習 ${c.review}`];
+  const split = (goal, round) => (goal === null ? `1 日 ${p.cap} 枚` : `${round}${formatMD(goal)} までの日割り`);
+  if (p.r1 > 0 || (!p.round2Active && !p.round2Waiting)) {
+    parts.push(`新しい ${p.newLeft}（${split(p.goal1, "1 周目 ")}）`);
+  }
+  if (p.round2Active && !p.allDone) {
+    parts.push(`2 周目 ${p.r2Left}（${split(p.goal2, "")}）`);
+  }
+  return parts.join("・");
+}
+
+function noticeBox(app, n) {
+  const what = n.round === 1 ? "1 周目" : "2 周目";
+  return el("div", { id: `home-plan-notice-${n.round}`, className: "banner notice plan-notice" }, [
+    el("p", { className: "plan-notice-text", text: `上限 ${n.cap} 枚なので、${what}が終わるのは ${formatMD(n.finish)} ごろです（目標 ${formatMD(n.goal)}）` }),
+    app.record
+      ? el("button", { className: "plan-notice-close", text: "×", attrs: { "aria-label": "閉じる" }, on: { click: () => app.dismissPlanNotice(n.key) } })
+      : null,
+  ]);
+}
+
+/** 練習の押しボタン（題と下の小さな文と「›」）。 */
+function pickButton(id, title, sub, disabled, onClick) {
+  return el("button", { id, className: "pick", disabled, on: { click: onClick } }, [
+    el("span", { className: "pick-text" }, [
+      el("span", { className: "pick-title", text: title }),
+      el("span", { id: `${id}-sub`, className: "pick-sub", text: sub }),
+    ]),
+    el("span", { className: "pick-arrow", attrs: { "aria-hidden": "true" }, text: "›" }),
+  ]);
+}
+
+/** 「範囲を選んで解く」の下の文（§14.4。前回の範囲は settings.practice（記録が無い間は app.practicePending）、今のカードに無い章は除いて読む）。 */
+function rangeText(app) {
+  const saved = app.record ? app.record.settings.practice ?? null : app.practicePending;
+  const range = saved ?? emptyRange();
+  const r = rangeSummary(range, app.mainCards, DECK.fields);
+  if (r.kind === "span") {
+    const a = r.a - r.field.base;
+    const b = r.b - r.field.base;
+    return a === b ? `前回: ${r.field.label} 第${a}章` : `前回: ${r.field.label} 第${a}〜${b}章`;
+  }
+  if (r.kind === "many") {
+    return `前回: ${chapterName(r.first)} ほか ${r.n} 章`;
+  }
+  return "章・札を選ぶ（テスト前などに）";
+}
+
+function mainBlock(app, c, p) {
+  const blockCreate = app.readFailed && !app.record; // 読めなかった起動の間は記録を作る操作を止める（禁止パターン）
+  const round2Left = p.round2Active ? p.r2Left : 0;
+  const total = c.review + p.newLeft + round2Left;
+  const minutes = Math.max(1, Math.round((c.review + p.newLeft * 3 + round2Left) * 7 / 60));
+  const days = app.record ? streak(app.record.days, logicalDay(app.now())) : 0;
+  const mistakes = app.record ? mistakenIds(app.mainCards, app.record).length : 0;
+  return el("div", { id: "home-plan", className: "panel study-box" }, [
+    el("div", { className: "study-box-head" }, [
+      el("span", { className: "study-box-title", text: "本編" }),
+      days > 0 ? el("span", { id: "home-streak", className: "badge streak", text: `連続 ${days} 日` }) : null,
+    ]),
+    el("p", { id: "home-plan-line", className: "muted study-box-note", text: planLine(c, p) }),
+    p.round2Waiting && p.r1 === 0 && !p.round2Active
+      ? el("p", { id: "home-plan-round2-wait", className: "muted study-box-note", text: "1 周目が終わりました。2 周目は明日から出ます" })
+      : null,
+    p.allDone ? el("p", { id: "home-plan-all-done", className: "study-box-note", text: "2 周目も終わりました。あとは復習だけ出ます" }) : null,
+    p.capZero ? el("p", { id: "home-plan-cap-zero", className: "hint", text: "新しいカードの上限が 0 です（設定で変えられます）" }) : null,
+    ...p.notices.map((n) => noticeBox(app, n)),
+    el("button", {
+      id: "home-today-start", className: "primary big",
+      text: total > 0 ? `今日の分を始める（約 ${minutes} 分）` : "今日の分は終わり",
+      disabled: total === 0 || blockCreate, on: { click: () => app.startStudy() },
+    }),
+    el("p", { className: "practice-head", text: "もっと解く（練習）" }),
+    el("p", { className: "muted practice-note", text: "今日の分とは別に、好きなだけ。何周してもよい" }),
+    pickButton("home-mistakes", "間違えた問題を解き直す", mistakes > 0 ? `本編で間違えたことがある ${mistakes} 問` : "まだありません",
+      mistakes === 0, () => app.startMistakes()),
+    pickButton("home-range", "範囲を選んで解く", rangeText(app), blockCreate, () => app.navigate("practice")),
+  ]);
+}
+
+/** 問題集ごとの段（§14.6）。カードの無い問題集は出さない（A209）。 */
+function packBlocks(app) {
+  return DECK.packs.map((pk) => {
+    const v = packView(app.cards, app.record, pk.id);
+    if (v.total === 0) {
+      return null;
+    }
+    return el("div", { id: `home-pack-${pk.id}`, className: "panel study-box pack-box", attrs: { "data-pack": pk.id } }, [
+      el("div", { className: "study-box-head" }, [
+        el("span", { className: "study-box-title", text: pk.label }),
+        el("span", { className: "muted pack-kind", text: "問題集" }),
+      ]),
+      el("p", { className: "muted study-box-note pack-progress", text: `解いた ${v.done} / ${v.total}・間違い ${v.miss}` }),
+      el("div", { className: "study-box-actions" }, [
+        el("button", {
+          className: "primary pack-next", text: v.nextIds.length > 0 ? "続きから解く" : "最初から解く",
+          disabled: app.readFailed, on: { click: () => app.startPack(pk.id, "next") },
+        }),
+        el("button", {
+          className: "pack-miss", text: `間違い ${v.miss} 問を解き直す`,
+          disabled: app.readFailed || v.miss === 0, on: { click: () => app.startPack(pk.id, "miss") },
+        }),
+      ]),
+    ]);
+  });
+}
+
+function renderPlan(app) {
+  const now = app.now();
+  const opts = planQueueOpts(app.mainCards, app.record, now, app.planDeck);
+  const c = homeCounts(app.mainCards, app.record, now, opts);
+  const p = planCounts(app.mainCards, app.record, now, app.planDeck);
+  const canUndo = app.canUndoHome(); // undo に p が無く、undo.id が本編のカードのときだけ（§14.12・A231）
+  return el("section", { id: "screen-home", className: "screen" }, [
+    el("h1", { className: "app-title", text: DECK.appName }),
+    ...topBanners(app),
+    mainBlock(app, c, p),
+    ...packBlocks(app),
+    backlogLine(c),
+    editionLine(app),
+    el("div", { className: "actions" }, [
+      canUndo ? el("button", { id: "home-undo", text: "1つ戻す", on: { click: () => app.undoFromHome() } }) : null,
+      el("button", {
+        id: "home-report", text: "週の報告",
+        disabled: !app.record || app.readFailed, on: { click: () => app.weeklyReport() },
+      }),
+      el("button", { id: "home-stats", text: "統計", disabled: !app.record, on: { click: () => app.navigate("stats") } }),
+      el("button", { id: "home-settings", text: "設定", on: { click: () => app.navigate("settings") } }),
+      el("button", { id: "home-help", text: "使い方", on: { click: () => app.navigate("help") } }),
+    ]),
+    reportNote(app),
+    reportPanel(app),
+  ]);
+}
+
+export function render(app) {
+  return app.plan ? renderPlan(app) : renderChem(app);
 }

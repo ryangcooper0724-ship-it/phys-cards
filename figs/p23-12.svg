@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <line x1="110" y1="22" x2="250" y2="22" stroke="#1a1d21" stroke-width="2"/>
+  <g stroke="#8a929b" stroke-width="1">
+    <line x1="118" y1="22" x2="126" y2="14"/>
+    <line x1="140" y1="22" x2="148" y2="14"/>
+    <line x1="162" y1="22" x2="170" y2="14"/>
+    <line x1="184" y1="22" x2="192" y2="14"/>
+    <line x1="206" y1="22" x2="214" y2="14"/>
+    <line x1="228" y1="22" x2="236" y2="14"/>
+  </g>
+  <rect x="60" y="80" width="240" height="152" fill="#e3eef6" stroke="none"/>
+  <polyline points="60,60 60,232 300,232 300,60" fill="none" stroke="#1a1d21" stroke-width="2.2"/>
+  <line x1="60" y1="80" x2="300" y2="80" stroke="#1a1d21" stroke-width="1.5"/>
+  <line x1="180" y1="22" x2="180" y2="130" stroke="#1a1d21" stroke-width="1.5"/>
+  <rect x="158" y="130" width="44" height="40" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="166" y="156" font-size="16" font-style="italic">m</text>
+  <text x="214" y="196" font-size="12" font-family="sans-serif" fill="#565d66">体積 V</text>
+  <text x="214" y="212" font-size="12" font-family="sans-serif" fill="#565d66">全部沈めて静止</text>
+  <text x="66" y="98" font-size="12" font-family="sans-serif" fill="#565d66">密度 ρ₀</text>
+</svg>

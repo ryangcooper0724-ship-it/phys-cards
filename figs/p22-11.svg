@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <circle cx="60" cy="190" r="3.5" fill="#1a1d21"/>
+  <text x="38" y="196" font-size="16" font-style="italic">O</text>
+  <line x1="60" y1="190" x2="220" y2="120" stroke="#1a1d21" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="136" y="177" font-size="17" font-style="italic"><tspan font-weight="bold">r</tspan></text>
+  <line x1="220" y1="120" x2="275" y2="96" stroke="#1a1d21" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="220" y1="120" x2="238.1" y2="29.8" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="246.1" y="39.8" font-size="17" font-style="italic" fill="#1f5f8b"><tspan font-weight="bold">F</tspan></text>
+  <path d="M245.7,108.8 A28,28 0 0 0 225.5,92.5" fill="none" stroke="#1a1d21" stroke-width="1.2"/>
+  <text x="243.1" y="94.9" font-size="16" font-style="italic">θ</text>
+  <circle cx="220" cy="120" r="3" fill="#1a1d21"/>
+  <text x="232" y="160" font-size="12" font-family="sans-serif" fill="#565d66">作用点</text>
+</svg>

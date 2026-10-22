@@ -25,6 +25,12 @@ export function nextDayStart(nowMs) {
   return new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1, DAY_START_HOUR, 0, 0, 0).getTime();
 }
 
+/** YYYY-MM-DD の曜日（0＝日〜6＝土。暦の計算。時間帯に依らない）。 */
+export function weekdayOf(dayKey) {
+  const [y, m, d] = dayKey.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
 /** YYYY-MM-DD に日数を足す（暦の計算。時間帯に依らない）。 */
 export function addDays(dayKey, n) {
   const [y, m, d] = dayKey.split("-").map(Number);

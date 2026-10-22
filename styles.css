@@ -370,6 +370,12 @@ h2 {
   color: var(--muted);
 }
 
+/* 設定の一番下の「アプリの版・カードの版」（plan のデッキだけ。A235） */
+.versions-line {
+  font-size: 13px;
+  margin: 16px 0 0;
+}
+
 .sec {
   font-size: 15px;
   margin: 4px 0 0;
@@ -599,6 +605,44 @@ button:disabled {
   border-radius: 10px;
   background: var(--how-bg);
   border-left: 4px solid var(--how-line);
+}
+
+/* 解説（exp。§14.13）: 裏の答えの下のたためる段。閉じた見出しは1行の小さな押しボタン（7 秒の流れの邪魔をしない） */
+.exp-box {
+  margin: 8px 0 4px;
+}
+
+button.exp-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 2px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: none;
+}
+
+.exp-arrow {
+  font-size: 12px;
+}
+
+.exp-body {
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 18px;
+}
+
+.exp-body[hidden] {
+  display: none;
+}
+
+/* 解説を開いている間だけ、カードの下に評価のボタンの段の高さ分の余白（開いた長い解説を最後まで送ってもボタンに隠れない。A236。
+   --bar-h は study.js が段を測って入れる。閉じている間・解説の無いカード（化学）は余白なし） */
+.study.exp-open .card-panel {
+  margin-bottom: var(--bar-h, 120px);
 }
 
 /* 章ごとの色の表（.chc-N が --chc を決める） */
@@ -849,6 +893,19 @@ button.danger {
   margin-top: 8px;
 }
 
+/* plan のデッキ（物理）の統計の 1 周目・2 周目・今日の練習・問題集の行（§14.10。化学の統計には出ない） */
+.stats-plan {
+  margin: 0 0 6px;
+  padding: 3px 10px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.stats .stats-plan p {
+  margin: 1px 0;
+}
+
 /* 使い方・カードの一覧（T4） */
 .help-item {
   margin: 0 0 10px;
@@ -891,6 +948,25 @@ button.danger {
 .card-a,
 .card-how {
   font-size: 20px;
+}
+
+/* カードの一覧の解説（開いた状態。§14.13） */
+.card-exp {
+  margin: 6px 0 2px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.card-item .card-exp-head {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.card-exp-body {
+  font-size: 18px;
+  overflow-wrap: anywhere;
 }
 
 /* 版の知らせ・新しい版（T5）: 青い帯 */
@@ -1070,30 +1146,7 @@ button.banner-button {
   color: var(--muted);
 }
 
-/* 問題集（SPEC §13.4）: ホームの「いまやっている」・問題集の印・選ぶ画面 */
-.mode-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 10px 0 4px;
-}
-
-.mode-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.mode-label {
-  font-size: 13px;
-}
-
-.mode-name {
-  font-size: 18px;
-  font-weight: 700;
-}
-
+/* 問題集のカードの印（SPEC §13.4・§14.6） */
 .pack-badge {
   display: inline-block;
   margin-right: 6px;
@@ -1106,46 +1159,11 @@ button.banner-button {
   vertical-align: 2px;
 }
 
-.pack-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 12px;
-  text-align: left;
-}
-
-.pack-mark {
-  flex: 0 0 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: var(--surface);
-}
-
-.pack-row.on .pack-mark {
-  border: 8px solid var(--accent);
-}
-
-.pack-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.pack-name {
-  font-weight: 700;
-}
-
-.pack-desc {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* 新しく進める（SPEC §13.5）: ホームの「復習」「新しく進める」の箱と、章を選ぶ画面 */
+/* plan のデッキ（物理。SPEC §14.3・§14.4・§14.6）: ホームの「本編」・問題集の段（.study-box）、練習の押しボタン（.pick）、問題集の学習の画面 */
 .study-box {
   margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
 }
 
 .study-box-head {
@@ -1157,12 +1175,6 @@ button.banner-button {
 .study-box-title {
   font-size: 18px;
   font-weight: 700;
-}
-
-.study-box-num {
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
 }
 
 .study-box-note {
@@ -1183,32 +1195,260 @@ button.banner-button {
   flex: 1;
 }
 
-.chapter-pick {
+.practice-head {
+  margin: 16px 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.practice-note {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+button.pick {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  min-height: 56px;
+  margin: 6px 0 0;
+  padding: 8px 14px;
   text-align: left;
 }
 
-.chapter-pick .chapter-left {
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
+.pick-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.chapter-pick.done .chapter-left {
-  color: var(--r3-fg);
+.pick-title {
+  font-size: 16px;
   font-weight: 700;
 }
 
-/* 章を選ぶ・やる物を選ぶの一覧（SPEC §13.4・§13.5）: 箇条書きの点を出さず、行の間に少し空ける */
-.chapters-list,
-.packs-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
+.pick-sub {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.pick-arrow {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.plan-notice {
+  margin: 0 0 10px;
+}
+
+.pack-kind {
+  font-size: 13px;
+}
+
+#settings-packs .pack-progress {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.pack-band {
+  width: fit-content;
+  margin: 6px auto 0;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--r2-bg);
+  color: var(--r2-fg);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ratings.ratings-2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.ratings-2 .rating {
+  min-height: 60px;
+  font-size: 18px;
+}
+
+/* plan のデッキの設定・本編の範囲・範囲を選んで解く（SPEC §14.4・§14.7。モック inject_v3.js の settings()・narrow()・practiceRange()） */
+.section-note {
+  margin: -4px 0 8px;
+  font-size: 13px;
+}
+
+.setting-row {
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.row-button {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.date-input {
+  flex-shrink: 0;
+  width: 9.5em;
+  min-height: 40px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.seg {
+  display: flex;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.seg button {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 0;
+}
+
+.seg button.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.field-box {
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.field-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 14px;
+}
+
+button.field-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px 0 13px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+button.field-open:disabled {
+  opacity: 1;
+}
+
+.field-arrow {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.field-label {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.not-ready .field-label,
+.field-wait {
+  color: var(--muted);
+}
+
+.field-wait {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.field-all {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.field-box .field-chapters {
+  padding: 0 14px 4px 38px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.field-inner {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+button.chip {
+  min-height: 40px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 999px;
+}
+
+button.chip.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 20px 0 2px;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.section-head button {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.practice-count {
+  margin: 14px 0 8px;
+  font-size: 14px;
 }

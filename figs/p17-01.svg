@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <circle cx="140" cy="135" r="88" fill="none" stroke="#1a1d21" stroke-width="1.5"/>
+  <circle cx="140" cy="135" r="2.5" fill="#1a1d21"/>
+  <text x="122" y="153" font-size="15" font-style="italic">O</text>
+  <line x1="140" y1="135" x2="248" y2="135" stroke="#1a1d21" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="140" y1="135" x2="196.6" y2="67.6" stroke="#1a1d21" stroke-width="1.5"/>
+  <path d="M166,135 A26,26 0 0 0 156.7,115.1" fill="none" stroke="#1a1d21" stroke-width="1.2"/>
+  <text x="170" y="127" font-size="16" font-style="italic">θ</text>
+  <text x="162" y="89" font-size="17" font-style="italic">r</text>
+  <circle cx="196.6" cy="67.6" r="6" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="204.6" y="83.6" font-size="16" font-style="italic">m</text>
+  <line x1="192" y1="63.7" x2="149.1" y2="27.7" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="109.1" y="31.7" font-size="17" font-style="italic" fill="#1f5f8b">F<tspan font-size="12" dy="4" font-style="normal" font-family="sans-serif">接</tspan></text>
+  <line x1="192.7" y1="72.2" x2="156.7" y2="115.1" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="180.9" y="102.2" font-size="17" font-style="italic" fill="#1f5f8b">F<tspan font-size="12" dy="4" font-style="normal" font-family="sans-serif">向</tspan></text>
+  <text x="244" y="40" font-size="12" font-family="sans-serif" fill="#565d66">接線：θ が増える向き</text>
+  <text x="244" y="56" font-size="12" font-family="sans-serif" fill="#565d66">向心：中心 O 向き</text>
+  <text x="244" y="72" font-size="12" font-family="sans-serif" fill="#565d66">（合力の2成分）</text>
+</svg>

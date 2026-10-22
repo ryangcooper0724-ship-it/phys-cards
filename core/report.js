@@ -33,13 +33,13 @@ export function reportFileName(nowMs, ext = "json", stem = FILE_STEM) {
 
 /**
  * 読み込みの検査（§2.5・§4.8・§11・§12.8）。text はファイルの中身（UTF-8 で読んだ文字列）、byteLength はファイルのバイト数。
- * opts（既定は化学）: kind＝自分の reportKind、deckId＝自分のデッキの id、bare＝自分が bareRecord のデッキか。
+ * opts（既定は化学）: kind＝自分の reportKind、deckId＝自分のデッキの id、bare＝自分が bareRecord のデッキか、chapterMax＝記録の章のキーの上限（既定 30。§14.12）。
  * 順番: 大きさ → JSON → kind（別のアプリの報告ファイル・形の違い）→ 教科（別のアプリの記録。生の deckId で見る）→ §4.8（§12.8）。
  * deckId の形が違う物は教科を判定せず §4.8 の形の違いにする。bareRecord のデッキ（化学）は読み込んだ自分の deckId を落とす（記録の形を変えない）。
  * 返り値: {ok: true, record}（undo は null）／{ok: false, message}。
  */
 export function parseImport(text, byteLength, opts = {}) {
-  const { kind = REPORT_KIND, deckId = "chem", bare = true } = opts;
+  const { kind = REPORT_KIND, deckId = "chem", bare = true, chapterMax } = opts;
   if (!(byteLength <= IMPORT_MAX_BYTES)) {
     return { ok: false, message: MSG_TOO_BIG };
   }
@@ -68,7 +68,7 @@ export function parseImport(text, byteLength, opts = {}) {
       }
     }
   }
-  const v = validateRecord(target);
+  const v = validateRecord(target, { chapterMax });
   if (!v.ok) {
     return {
       ok: false,

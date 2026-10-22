@@ -1,4 +1,4 @@
-/* 責務: カードの HTML（q・a・how）の文法の判定 checkHtml（SPEC §3。opts.math が真なら §12.2・§12.8 の数式の区間、opts.figures が真なら §13.2 の図の印も）と、消毒して「トークンの列」を返す sanitize（§7・§11。ui/dom.js が createElement と textContent で組む。数式の区間は {t: "math"}）。
+/* 責務: カードの HTML（q・a・how・exp）の文法の判定 checkHtml（SPEC §3。opts.math が真なら §12.2・§12.8 の数式の区間、opts.figures が真なら §13.2 の図の印も）と、消毒して「トークンの列」を返す sanitize（§7・§11。ui/dom.js が createElement と textContent で組む。数式の区間は {t: "math"}）。
    依存: なし。Python の tools/allow.py は別実装（表を共有しない。tests/fixtures/allow_cases.json で一致を確かめる。T8）。
    注意: 文字の判定は charCodeAt の数で書く（エスケープの書き方が道具で生の文字に化けた前例がある）。名前の小文字化に toLowerCase を全体へ当てない（長さが変わる文字がある）。 */
 
@@ -165,7 +165,7 @@ function figEnd(s, i) {
   return -1;
 }
 
-/** 図の印の中身（[[図: と ]] の間）の違反の理由（合法なら null）。field は q・a・how（|裏: は q だけ）。 */
+/** 図の印の中身（[[図: と ]] の間）の違反の理由（合法なら null）。field は q・a・how・exp（|裏: は q だけ。exp は a と同じ扱い。§14.13）。 */
 function figureProblem(body, field) {
   const m = FIG_BODY.exec(body);
   if (m === null) {
@@ -212,7 +212,7 @@ function decodeRef(name) {
   return name[0] === "#" && decimalOk(n) ? String.fromCharCode(n) : null;
 }
 
-/** §3 の文法の違反の理由（合法なら null）。opts.math が真なら数式の区間を見る（§12.8）。opts.figures が真なら図の印を見る（opts.field は q・a・how。§13.10）。 */
+/** §3 の文法の違反の理由（合法なら null）。opts.math が真なら数式の区間を見る（§12.8）。opts.figures が真なら図の印を見る（opts.field は q・a・how・exp。§13.10・§14.13）。 */
 export function checkHtml(s, opts = {}) {
   const math = opts.math === true;
   const figures = opts.figures === true;

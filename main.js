@@ -1,20 +1,29 @@
-/* 責務: 起動の順番（SPEC §2.0 の (1) #install → (2) cards.json → (3) 記録の読み取り・#newer・退避と #broken（§4.9）→ (4) #settings → (5) #home）と、状態・操作（評価・設定・週の報告・読み込み・新しく始める・別のタブ）・画面の振り分け。
-   依存: core/*（純ロジック）、storage.js・platform.js・sw-client.js（外部資源）、router.js、ui/screens/*・ui/keys.js、version.js（build_dist.py が dist に作る）。
-   注意: innerHTML を使わない（§7）。#install では localStorage に触らずエラーの記録も書かず SW も登録しない。版の更新と読み込みでは undo を null（§2.6。core/deck.js）。記録を書く・消すのは commitRecord・読み込み・新しく始める・起動の退避だけ（読み込み・新しく始める・週の報告は readFailed の間は止める。A79・A113）。共有は押した処理の中で await なしで呼ぶ（§11）。 */
+/* 責務: 起動の順番（SPEC §2.0 の (1) #install → (2) cards.json → (3) 記録の読み取り・#newer・退避と #broken（§4.9）→ (4) #settings（plan のデッキは #home）→ (5) #home）と、状態・操作（評価・設定・週の報告・読み込み・新しく始める・別のタブ）・画面の振り分け。
+   plan のデッキ（物理。§14）の学習の流れは app.studyFlow（{flow: "today"}・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）。
+   plan のデッキの設定（目標日・2周目の出し方・本編の範囲 #range）と範囲を選んで解く（#practice。選んでいる途中は app.practiceDraft、記録が無い間の前回の範囲は app.practicePending）も持つ（§14.4・§14.7）。
+   依存: core/*（純ロジック。plan のデッキの数え・評価・問題集は core/plan.js）、storage.js・platform.js・sw-client.js（外部資源）、router.js、ui/screens/*・ui/keys.js、version.js（build_dist.py が dist に作る）。
+   注意: innerHTML を使わない（§7）。#install では localStorage に触らずエラーの記録も書かず SW も登録しない。版の更新と読み込みでは undo を null（§2.6。core/deck.js）。記録を書く・消すのは commitRecord・読み込み・新しく始める・起動の退避だけ（読み込み・新しく始める・週の報告は readFailed の間は止める。A79・A113。plan のデッキで記録を作る最初の評価・答えも readFailed の間は止める）。共有は押した処理の中で await なしで呼ぶ（§11）。 */
 import { APP_VERSION } from "./version.js";
 import { DECK } from "./deck.js";
-import { checkCardsStructure, htmlViolations, CARDS_MAX_BYTES } from "./core/cards.js";
+import { checkCardsStructure, htmlViolations, CARDS_MAX_BYTES, HTML_FIELDS } from "./core/cards.js";
 import { deckHashes } from "./core/hash.js";
+import { chapterKeyMax, fieldOfChapter } from "./core/fields.js";
+import { logicalDay } from "./core/day.js";
 import { applyDeckUpdate, dismissNotice } from "./core/deck.js";
 import {
   createRecord, parseStoredRecord, prepareForSave, checkForSave, parseLimitInput, LIMITS,
-  makeBrokenStash, parseBrokenStash, countRated,
+  makeBrokenStash, parseBrokenStash, countRated, PLAN_NEW_DEFAULT,
 } from "./core/record.js";
-import { homeCounts, buildSession, refreshSession, nextCardId, markRated, withFront, endState, entryOf, isNewEntry } from "./core/queue.js";
+import { homeCounts, buildSession, refreshSession, nextCardId, markRated, withFront, endState, entryOf } from "./core/queue.js";
+import {
+  planQueueOpts, planRate, dismissPlanNotice, mistakenIds, shuffled, packView, answerPack, resetPack, restorePacks, isMainCard,
+  planSettings, checkGoal, toggleRangeOff, toggleRangeOffField, readRange, toggleRangeChapter, toggleRangeField, toggleRangeTag, practiceIds,
+} from "./core/plan.js";
 import { previewSeconds } from "./core/scheduler.js";
 import { applyRating, undoLast } from "./core/review.js";
 import { buildReport, reportFileName, parseImport, IMPORT_MAX_BYTES, MSG_NOT_JSON } from "./core/report.js";
 import { weekSummary } from "./core/stats.js";
+import { planWeekSummary } from "./core/plan_stats.js";
 import {
   readRecordRaw, writeRecord, removeRecord, readBrokenRaw, writeBroken, addError, readErrors, RECORD_KEY, setKeyPrefix,
 } from "./storage.js";
@@ -39,8 +48,8 @@ import * as errorsScreen from "./ui/screens/errors.js";
 import * as statsScreen from "./ui/screens/stats.js";
 import * as helpScreen from "./ui/screens/help.js";
 import * as cardsScreen from "./ui/screens/cards.js";
-import * as packsScreen from "./ui/screens/packs.js";
-import * as chaptersScreen from "./ui/screens/chapters.js";
+import * as practiceScreen from "./ui/screens/practice.js";
+import * as rangeScreen from "./ui/screens/range.js";
 
 const SCREEN_MODULES = {
   home: homeScreen,
@@ -56,16 +65,24 @@ const SCREEN_MODULES = {
   stats: statsScreen,
   help: helpScreen,
   cards: cardsScreen,
-  packs: packsScreen,
-  chapters: chaptersScreen,
+  practice: practiceScreen,
+  range: rangeScreen,
 };
 
 // 保存のキーの頭はデッキの値（どの読み書きよりも前。化学は osakaCards のまま。SPEC §12.4）
 setKeyPrefix(DECK.keyPrefix);
+/** 記録の検査の章のキーの上限（化学 30・分野のあるデッキ 999。起動・保存の前・読み込みのすべてで同じ値。§14.12）。 */
+const RECORD_OPTS = Object.freeze({ chapterMax: chapterKeyMax(DECK.fields) });
 /** 読み込みで自分の物と見なす報告の kind と記録の教科（§12.8）。 */
-const IMPORT_OPTS = Object.freeze({ kind: DECK.reportKind, deckId: DECK.id, bare: DECK.bareRecord });
+const IMPORT_OPTS = Object.freeze({ kind: DECK.reportKind, deckId: DECK.id, bare: DECK.bareRecord, ...RECORD_OPTS });
 /** 記録に書く教科の印（bareRecord が偽のデッキだけ。化学は書かない。§12.8）。 */
 const OWN_DECK_ID = DECK.bareRecord ? null : DECK.id;
+/** 今日の分・練習・問題集のデッキか（物理。§14.1）。偽（化学）なら今までの「始める」の流れ。 */
+const PLAN = DECK.features.plan === true;
+/** core/plan.js・core/plan_stats.js（統計・週の報告の文。packs は問題集の行）に渡すデッキの値（core は DECK を読まない）。 */
+const PLAN_DECK = Object.freeze({ fields: DECK.fields, examDay: DECK.examDay, packs: DECK.packs });
+/** 化学の queue・統計の口（今のまま。何も足さない）。 */
+const CHEM_OPTS = Object.freeze({});
 
 /** 保存する記録に教科の印を付ける（物理は保存のたびに deckId を書く。§12.8）。 */
 function stampDeck(record) {
@@ -77,7 +94,10 @@ const root = document.getElementById("app");
 const app = {
   gate: null, // "install"・"nocards"・"newer"・"broken" のとき、その画面で止まる
   cards: [],
+  mainCards: [], // 本編のカード（pack が null。数え方の母数。§14.6・§14.12。起動で決める）
   cardsById: new Map(),
+  plan: PLAN,
+  planDeck: PLAN_DECK,
   edition: "",
   hashes: {},
   record: null,
@@ -90,11 +110,17 @@ const app = {
   importState: null, // {stage: "pick"|"confirm", message, record, current}
   resetStep: 0, // 新しく始めるの確認（0→1→消す）
   resetMessage: null,
+  packResetAsk: null, // 設定の問題集の「最初から」の確認中の問題集の id（§14.7。確認1回）
   reportText: null, // ダウンロードにしたときに画面に出す要約の文
   reportNote: null,
-  study: null, // {session, currentId, revealedAt, preview, end}
+  // 学習の画面の状態: {kind: "today"|"practice"|"pack", session（today）, practice: {ids, queue, pos, last}, pack: {id, mode, ids, pos, last},
+  //                   currentId, revealedAt, preview, end}
+  study: null,
   undoResume: false, // ホームの「1つ戻す」から #study へ行く間（出す章が 0 でも開ける。§11）
-  studyFlow: null, // 自分で進めるデッキの学習の流れ（{flow: "review"|"new", chapter}。# に持たない。§13.5）
+  studyFlow: null, // plan のデッキの学習の流れ（{flow: "today"}・{flow: "practice", ids, kind}・{flow: "pack", pack, mode}。# に持たない。§14.12）
+  practiceDraft: null, // #practice で選んでいる途中の範囲（{range: {chapters, tags, which}, open: Set（開いた分野の id）}。押すたびに保存しない。§14.4）
+  practicePending: null, // 記録が無い間に「解く」を押した範囲（最初に記録を作るときに settings.practice に書く。§14.12）
+  rangeOpen: new Set(), // #range で開いている分野の id（メモリだけ。§14.7）
   nocardsMessage: null,
   persistLabel: null, // 設定の「保存の保護」（開くたびに persisted() を調べる。§2.3）
   swUpdateReady: false, // 新しい SW が waiting（ホームにだけ「新しい版があります」を出す。§2.7）
@@ -110,41 +136,28 @@ function errorText(e) {
   return String(e);
 }
 
-/** 選んでいる問題集の id（今のデッキに無い id・無い・null は本編＝null。§13.4・§13.10）。 */
-function currentPack() {
-  const id = app.record ? app.record.settings.pack ?? null : null;
-  return id !== null && DECK.packs.some((pk) => pk.id === id) ? id : null;
+/** core の queue・統計に渡す口（その時刻で数える）。plan のデッキは plan.js の数え（新しいカードの今日の残り・2周目の id。§14.3）、
+    化学は何も足さない。午前4時をまたいだら読み直すだけで新しい日の数になる（refreshSession が並べ直す）。 */
+function queueOptsAt(nowMs) {
+  return PLAN ? planQueueOpts(app.mainCards, app.record, nowMs, PLAN_DECK) : CHEM_OPTS;
 }
+Object.defineProperty(app, "queueOpts", { get: () => queueOptsAt(app.now()) });
 
-/** 選んでいる物のカード（本編か、その問題集。数え方の母数。§13.4・§13.10）。 */
-Object.defineProperty(app, "modeCards", {
-  get() {
-    const pack = currentPack();
-    return app.cards.filter((c) => (c.pack ?? null) === pack);
-  },
-});
-/** 本編のカード（設定の章の一覧・本編の数え方。§13.10）。 */
-Object.defineProperty(app, "mainCards", {
-  get() {
-    return app.cards.filter((c) => (c.pack ?? null) === null);
-  },
-});
-Object.defineProperty(app, "currentPack", { get: currentPack });
-/** core の queue・統計に渡す口（§13.5。新しいカードは自分で決めるデッキか）。 */
-const QOPTS = Object.freeze({ selfPaced: DECK.features.selfPaced === true });
-app.queueOpts = QOPTS;
-
-/** 今のデッキに無い問題集の id は、メモリの上だけ本編（null）にする。保存はしない（次の保存で null が書かれる。§13.10）。 */
-function forgetUnknownPack(rec) {
-  const id = rec && Object.hasOwn(rec.settings, "pack") ? rec.settings.pack : null;
-  if (id === null || DECK.packs.some((pk) => pk.id === id)) {
-    return rec;
+/** 記録を作る（§4.7・§14.3: plan のデッキは新しいカードの上限の既定 30。章は本編だけ §13.10）。 */
+function newRecord() {
+  const rec = createRecord({
+    cards: app.mainCards, edition: app.edition, hashes: app.hashes, nowMs: app.now(), deckId: OWN_DECK_ID,
+    newPerDay: PLAN ? PLAN_NEW_DEFAULT : null,
+  });
+  if (PLAN && app.practicePending !== null) {
+    rec.settings = { ...rec.settings, practice: app.practicePending }; // 記録が無い間に「解く」を押した範囲を、記録を作るときに一緒に書く（§14.12）
+    app.practicePending = null;
   }
-  return { ...rec, settings: { ...rec.settings, pack: null } };
+  return rec;
 }
 
 function routeContext() {
-  const counts = app.record ? homeCounts(app.modeCards, app.record, app.now(), QOPTS) : null;
+  const counts = app.record && !PLAN ? homeCounts(app.mainCards, app.record, app.now(), CHEM_OPTS) : null;
   return {
     gate: app.gate,
     hasRecord: app.record !== null,
@@ -152,9 +165,7 @@ function routeContext() {
     fromBroken: app.fromBroken,
     undoResume: app.undoResume,
     readFailed: app.readFailed,
-    hasPacks: DECK.packs.length > 0,
-    packMode: currentPack() !== null,
-    selfPaced: QOPTS.selfPaced,
+    plan: PLAN,
     flowChosen: app.studyFlow !== null,
   };
 }
@@ -202,7 +213,15 @@ function route() {
     app.resetStep = 0;
     app.resetMessage = null;
   }
+  if (name !== "settings") {
+    app.packResetAsk = null;
+  }
   const entering = app.screen !== name;
+  if (name !== "practice") {
+    app.practiceDraft = null;
+  } else if (entering || app.practiceDraft === null) {
+    app.practiceDraft = practiceDraftFromSaved(); // 開くたびに前回の範囲から（§14.4）
+  }
   app.screen = name;
   if (name === "settings" && entering) {
     checkPersisted();
@@ -235,7 +254,7 @@ function commitRecord(next) {
     return; // 別のタブの保存を上書きしない（§11）
   }
   const prepared = prepareForSave(stampDeck(next), app.now());
-  const bad = checkForSave(prepared);
+  const bad = checkForSave(prepared, RECORD_OPTS);
   app.record = prepared; // 保存できなくてもメモリで続ける（§2.8・§4.2）
   if (app.saveLocked) {
     app.saveFailed = true; // 読めなかった・退避できなかった記録を上書きしない（A47・§4.9）
@@ -261,21 +280,160 @@ function resolvePendingStash() {
   }
 }
 
-/** 設定を変えて保存する。記録が無ければ作る（§4.7: 初めて設定が変わったとき）。change は今の設定を受けて新しい設定を返す。 */
+/** 設定を変えて保存する。記録が無ければ作る（§4.7: 初めて設定が変わったとき）。change は今の設定を受けて新しい設定を返す。
+    変えたら真。plan のデッキは読めなかった起動で記録が無い間は記録を作らず偽（禁止パターン・§14.12）。 */
 function updateSettings(change) {
   if (app.otherTab) {
-    return;
+    return false;
+  }
+  if (PLAN && app.readFailed && app.record === null) {
+    return false;
   }
   let rec = app.record;
   const creating = rec === null;
   if (creating) {
-    rec = createRecord({ cards: app.mainCards, edition: app.edition, hashes: app.hashes, nowMs: app.now(), deckId: OWN_DECK_ID }); // 章は本編だけ（§13.10）
+    rec = newRecord();
   }
   commitRecord({ ...rec, settings: change(rec.settings) });
   if (creating) {
     requestPersist(); // 記録を作ったときに1回（§4.7）。結果は待たない
   }
+  return true;
 }
+
+/** plan のデッキで、読めなかった起動の間に設定を変えようとしたときの文。 */
+const MSG_SETTINGS_LOCKED = "記録を読めませんでした。開き直してください";
+/** 目標日を保存しなかったときの文（§14.7）。 */
+const GOAL_MESSAGES = Object.freeze({
+  past: "明日より後の日付を選んでください",
+  order: { goal1: "2 周目の目標日より前にしてください", goal2: "1 周目の目標日より後にしてください" },
+  bad: "日付を選び直してください",
+});
+
+/** 目標日を選んだ（§14.7）: which は "goal1"・"goal2"、value は input type=date の値（"" は未設定）。保存したら {ok: true}、
+    保存しなければ {ok: false, message}（今日の論理日以前・2周目が1周目以前・読めなかった起動）。同じ値なら何もしない（記録を作らない）。 */
+app.setGoal = (which, value) => {
+  if (!PLAN || (which !== "goal1" && which !== "goal2") || typeof value !== "string") {
+    return { ok: false, message: "" };
+  }
+  const settings = planSettings(app.record);
+  const r = checkGoal(settings, which, value, logicalDay(app.now()));
+  if (!r.ok) {
+    return { ok: false, message: r.why === "order" ? GOAL_MESSAGES.order[which] : GOAL_MESSAGES[r.why] };
+  }
+  if ((settings[which] ?? null) === r.value) {
+    return { ok: true };
+  }
+  if (!updateSettings((s) => ({ ...s, [which]: r.value }))) {
+    return { ok: false, message: app.otherTab ? "" : MSG_SETTINGS_LOCKED };
+  }
+  render();
+  return { ok: true };
+};
+
+/** 「2 周目の出し方」（§14.7）: "all"（全部）か "miss"（間違いだけ）。押した時点で保存。 */
+app.setRound2Mode = (mode) => {
+  if (!PLAN || (mode !== "all" && mode !== "miss") || (planSettings(app.record).round2Mode ?? "all") === mode) {
+    return;
+  }
+  updateSettings((s) => ({ ...s, round2Mode: mode }));
+  render();
+};
+
+/** 本編の範囲（#range）の章の「出す／出さない」（§14.7）: 押した時点で rangeOff を書いて保存（記録が無ければ作る）。 */
+app.toggleRangeChapter = (ch) => {
+  if (!PLAN || !app.mainCards.some((c) => c.chapter === ch)) {
+    return;
+  }
+  updateSettings((s) => toggleRangeOff(s, ch, app.mainCards));
+  render();
+};
+
+/** 本編の範囲の分野の「出す／出さない」（§14.7）: 全部出していれば全部外し、ほかは全部出す。 */
+app.toggleRangeField = (fieldId) => {
+  if (!PLAN || !app.mainCards.some((c) => { const f = fieldOfChapter(DECK.fields, c.chapter); return f !== null && f.id === fieldId; })) {
+    return; // カードの無い分野（準備中）は押せない
+  }
+  updateSettings((s) => toggleRangeOffField(s, app.mainCards, DECK.fields, fieldId));
+  render();
+};
+
+/** 本編の範囲の分野のたたみの開閉（メモリだけ。§14.7）。 */
+app.toggleRangeOpen = (fieldId) => {
+  if (app.rangeOpen.has(fieldId)) {
+    app.rangeOpen.delete(fieldId);
+  } else {
+    app.rangeOpen.add(fieldId);
+  }
+  render();
+};
+
+// ---- 範囲を選んで解く（#practice。§14.4・§14.12） ----
+
+/** #practice を開いたときの選択: 前回の範囲（記録の settings.practice、記録が無ければメモリの practicePending、どちらも無ければ何も選んでいない）。
+    今のカードに無い章・今のデッキに無い札は除いて読む。選んだ章のある分野は開いておく。 */
+function practiceDraftFromSaved() {
+  const saved = app.record ? app.record.settings.practice ?? null : app.practicePending;
+  const range = readRange(saved, app.mainCards, DECK.tags.map((t) => t.id));
+  const open = new Set();
+  for (const ch of range.chapters) {
+    const f = fieldOfChapter(DECK.fields, ch);
+    if (f !== null) {
+      open.add(f.id);
+    }
+  }
+  return { range, open };
+}
+
+/** 選んでいる途中の範囲を変える（保存しない）。change は今の範囲を受けて新しい範囲を返す。 */
+function changeDraft(change) {
+  const d = app.practiceDraft;
+  if (!PLAN || d === null) {
+    return;
+  }
+  d.range = change(d.range);
+  render();
+}
+
+app.practiceToggleOpen = (fieldId) => {
+  const d = app.practiceDraft;
+  if (!PLAN || d === null) {
+    return;
+  }
+  if (d.open.has(fieldId)) {
+    d.open.delete(fieldId);
+  } else {
+    d.open.add(fieldId);
+  }
+  render();
+};
+app.practiceToggleChapter = (ch) => changeDraft((r) => (app.mainCards.some((c) => c.chapter === ch) ? toggleRangeChapter(r, ch) : r));
+app.practiceToggleField = (fieldId) => changeDraft((r) => toggleRangeField(r, app.mainCards, DECK.fields, fieldId));
+app.practiceClear = () => changeDraft((r) => ({ ...r, chapters: [] }));
+app.practiceTag = (tagId) => changeDraft((r) => (tagId === null || DECK.tags.some((t) => t.id === tagId) ? toggleRangeTag(r, tagId) : r));
+app.practiceWhich = (which) => changeDraft((r) => (which === "all" || which === "miss" ? { ...r, which } : r));
+
+/** 「{N} 問を解く」（§14.4・§14.12）: 選んだ範囲を前回の範囲として、記録があれば settings.practice に保存し、無ければメモリに持つ
+    （最初の答えで記録を作るときに一緒に書く。「解く」だけでは記録を作らない）。範囲のカードを混ぜた順で練習の流れにする。 */
+app.startRange = () => {
+  const d = app.practiceDraft;
+  if (!PLAN || app.otherTab || d === null || (app.record === null && app.readFailed)) {
+    return; // 読めなかった起動の間は記録を作る流れを始めない（禁止パターン）
+  }
+  const ids = practiceIds(app.mainCards, app.record, d.range);
+  if (ids.length === 0) {
+    return;
+  }
+  const range = { chapters: [...d.range.chapters], tags: [...d.range.tags], which: d.range.which };
+  if (app.record !== null) {
+    commitRecord({ ...app.record, settings: { ...app.record.settings, practice: range } });
+  } else {
+    app.practicePending = range;
+  }
+  app.study = null;
+  app.studyFlow = { flow: "practice", ids: shuffled(ids, Math.random), kind: "range" };
+  app.navigate("study");
+};
 
 app.toggleChapter = (ch) => {
   const key = String(ch);
@@ -299,14 +457,19 @@ app.toggleTag = (id) => {
   render();
 };
 
-/** 問題集の切り替え（§13.4）: id は問題集の id か null（本編）。押した時点で保存してホームへ。読めなかった起動の間は止める。 */
-app.selectPack = (id) => {
-  if (app.readFailed || (id !== null && !DECK.packs.some((pk) => pk.id === id))) {
+/** 設定の問題集の「最初から」（§14.6・§14.7）: 1回目で確認を出し、2回目でその問題集の done を空にする（miss は残す）。 */
+app.resetPackFromSettings = (packId) => {
+  if (!PLAN || app.otherTab || app.readFailed || !app.record || !DECK.packs.some((pk) => pk.id === packId)) {
     return;
   }
-  updateSettings((s) => ({ ...s, pack: id }));
-  app.study = null;
-  app.navigate("home");
+  if (app.packResetAsk !== packId) {
+    app.packResetAsk = packId;
+    render();
+    return;
+  }
+  app.packResetAsk = null;
+  commitRecord(resetPack(app.record, packId));
+  render();
 };
 
 /** 「★だけ」「余裕ありを除く」の切り替え（押した時点で保存。§11）。 */
@@ -332,57 +495,110 @@ app.saveLimits = (newText, reviewText) => {
   if (errors.length > 0) {
     return { ok: false, errors };
   }
-  updateSettings((s) => ({ ...s, newPerDay: n, reviewPerDay: r }));
+  if (!updateSettings((s) => ({ ...s, newPerDay: n, reviewPerDay: r })) && PLAN && app.readFailed) {
+    return { ok: false, errors: [MSG_SETTINGS_LOCKED] }; // plan のデッキの読めなかった起動の間は保存しない（§14.12）
+  }
   render();
   return { ok: true, errors: [] };
 };
 
+// ---- 学習の画面（今日の分・練習・問題集。§2.2・§14.3・§14.4・§14.6） ----
+
+/** 次に出すカードと終わりの表示を決める（評価・答え・1つ戻すの後と、画面を開いた時）。 */
 function showNext() {
   const s = app.study;
   const now = app.now();
-  s.session = refreshSession(s.session, app.modeCards, app.record, now, QOPTS); // 午前4時をまたいだら並べ直す（§11）
-  s.currentId = nextCardId(s.session, app.modeCards, app.record, now, QOPTS);
   s.revealedAt = null;
   s.preview = null;
-  if (s.currentId !== null) {
-    s.end = null;
-  } else if (s.session.flow === "new") {
-    s.end = { kind: "new-done", chapter: s.session.chapter }; // 「新しいカードは全部やりました」「この章は全部やりました」（§13.5）
-  } else {
-    s.end = endState(app.modeCards, app.record, now, QOPTS);
+  if (s.kind === "practice") {
+    const p = s.practice;
+    s.currentId = p.pos < p.queue.length ? p.queue[p.pos] : null;
+    s.end = s.currentId === null ? { kind: "practice-done", n: p.ids.length } : null; // 「練習は終わり（N 問）」（§14.4）
+    return;
   }
+  if (s.kind === "pack") {
+    const pk = s.pack;
+    s.currentId = pk.pos < pk.ids.length ? pk.ids[pk.pos] : null;
+    s.end = s.currentId === null ? { kind: "pack-done", mode: pk.mode, miss: packView(app.cards, app.record, pk.id).miss } : null; // §14.6
+    return;
+  }
+  const opts = queueOptsAt(now);
+  s.session = refreshSession(s.session, app.mainCards, app.record, now, opts); // 午前4時をまたいだら並べ直す（§11。plan のデッキは新しい日の数で。§14.12）
+  s.currentId = nextCardId(s.session, app.mainCards, app.record, now, opts);
+  s.end = s.currentId === null ? endState(app.mainCards, app.record, now, opts) : null;
 }
 
+/** 学習の画面を作る（app.studyFlow の流れ。無ければ今日の分）。front はホームの「1つ戻す」で先頭に出すカード（今日の分の流れ）。 */
 function beginSession(front = null) {
   const now = app.now();
-  const flow = app.studyFlow ?? { flow: "mixed", chapter: null };
-  const session = buildSession(app.modeCards, app.record, now, { ...QOPTS, ...flow });
-  app.study = {
-    session: front !== null && app.cardsById.has(front) ? withFront(session, front, app.cards, app.record, now, QOPTS) : session,
-    currentId: null, revealedAt: null, preview: null, end: null,
-  };
+  const flow = PLAN && app.studyFlow ? app.studyFlow : { flow: "today" };
+  const blank = { currentId: null, revealedAt: null, preview: null, end: null };
+  if (flow.flow === "practice") {
+    app.study = { kind: "practice", practice: { ids: [...flow.ids], queue: [...flow.ids], pos: 0, last: null }, ...blank };
+  } else if (flow.flow === "pack") {
+    const v = packView(app.cards, app.record, flow.pack);
+    app.study = { kind: "pack", pack: { id: flow.pack, mode: flow.mode, ids: flow.mode === "miss" ? v.missIds : v.nextIds, pos: 0, last: null }, ...blank };
+  } else {
+    const opts = queueOptsAt(now);
+    const session = buildSession(app.mainCards, app.record, now, opts);
+    app.study = {
+      kind: "today",
+      session: front !== null && app.cardsById.has(front) ? withFront(session, front, app.mainCards, app.record, now, opts) : session,
+      ...blank,
+    };
+  }
   showNext();
 }
 
+/** 「始める」（化学）・「今日の分を始める」（plan のデッキ。記録が無くても始められ、最初の評価で記録を作る。§14.3）。 */
 app.startStudy = () => {
+  if (PLAN && !app.record && app.readFailed) {
+    return; // 読めなかった起動の間は記録を作らない（禁止パターン）
+  }
   app.study = null;
-  app.studyFlow = null;
+  app.studyFlow = PLAN ? { flow: "today" } : null;
   app.navigate("study");
 };
 
-/** 自分で進めるデッキの学習の入口（§13.5）: kind は "review"（復習する）か "new"（続きから。chapter を渡すとその章だけ）。 */
-app.startFlow = (kind, chapter = null) => {
-  if (!QOPTS.selfPaced || (kind !== "review" && kind !== "new")) {
+/** 「間違えた問題を解き直す」（§14.4）: 出す本編のカードのうち「間違えた」物を混ぜた順で。0 枚なら何もしない。 */
+app.startMistakes = () => {
+  if (!PLAN || !app.record) {
     return;
   }
-  if (kind === "review" && !app.record) {
+  const ids = mistakenIds(app.mainCards, app.record);
+  if (ids.length === 0) {
     return;
-  }
-  if (!app.record && app.readFailed) {
-    return; // 読めなかった起動の間は記録を作らない（禁止パターン・§13.10）
   }
   app.study = null;
-  app.studyFlow = { flow: kind, chapter: kind === "new" && Number.isInteger(chapter) ? chapter : null };
+  app.studyFlow = { flow: "practice", ids: shuffled(ids, Math.random), kind: "miss" };
+  app.navigate("study");
+};
+
+/** 練習の終わりの「同じ範囲でもう一度」（§14.4）: 同じカードを混ぜ直してもう一度（A207）。 */
+app.practiceAgain = () => {
+  const s = app.study;
+  if (!s || s.kind !== "practice" || !app.studyFlow) {
+    return;
+  }
+  app.studyFlow = { ...app.studyFlow, ids: shuffled(s.practice.ids, Math.random) };
+  app.study = null;
+  app.navigate("study");
+};
+
+/** 問題集を解く（§14.6）: mode は "next"（続きから。全部解いていれば done を空にして最初から）か "miss"（間違いを解き直す）。 */
+app.startPack = (packId, mode) => {
+  if (!PLAN || app.otherTab || app.readFailed || !DECK.packs.some((pk) => pk.id === packId) || (mode !== "next" && mode !== "miss")) {
+    return; // 読めなかった起動の間は押せない（§14.6。ボタンも押せなくする）
+  }
+  const v = packView(app.cards, app.record, packId);
+  if (v.total === 0 || (mode === "miss" && v.missIds.length === 0)) {
+    return;
+  }
+  if (mode === "next" && v.nextIds.length === 0) {
+    commitRecord(resetPack(app.record, packId)); // 「最初から解く」: done を空にし、miss は残す（§14.6。全部解いた＝記録がある）
+  }
+  app.study = null;
+  app.studyFlow = { flow: "pack", pack: packId, mode };
   app.navigate("study");
 };
 
@@ -393,62 +609,161 @@ app.reveal = () => {
   }
   const t = app.now(); // 評価の時刻＝答えを見た時刻（§11）
   s.revealedAt = t;
-  s.preview = previewSeconds(entryOf(app.record, s.currentId), t);
+  s.preview = s.kind === "pack" ? null : previewSeconds(entryOf(app.record, s.currentId), t); // 問題集は FSRS に入れない（§14.6）
   render();
 };
 
+/** 4つの評価（今日の分・練習）。plan のデッキは plan.js の planRate（印・round2Start・練習のその日最初の1回だけ記録に返す。§14.4・§14.12）。 */
 app.rate = (rating) => {
   const s = app.study;
-  if (app.otherTab || !s || s.currentId === null || s.revealedAt === null) {
+  if (app.otherTab || !s || s.kind === "pack" || s.currentId === null || s.revealedAt === null) {
     return;
   }
   const id = s.currentId;
   let base = app.record;
   const creating = base === null;
   if (creating) {
-    if (!QOPTS.selfPaced || app.readFailed) {
-      return; // 記録を作ってよいのは自分で進めるデッキの最初の評価だけ。読めなかった起動の間は作らない（§13.5・§13.10）
+    if (!PLAN || app.readFailed) {
+      return; // 記録を作ってよいのは plan のデッキの最初の評価だけ。読めなかった起動の間は作らない（§14.3・禁止パターン）
     }
-    base = createRecord({ cards: app.mainCards, edition: app.edition, hashes: app.hashes, nowMs: app.now(), deckId: OWN_DECK_ID });
+    base = newRecord();
   }
-  commitRecord(applyRating(base, id, rating, s.revealedAt)); // 最初の評価で作るときは、その評価を入れて1回で保存する
+  const next = PLAN
+    ? planRate(base, app.mainCards, app.cardsById.get(id), rating, s.revealedAt, DECK.fields, { practice: s.kind === "practice" })
+    : applyRating(base, id, rating, s.revealedAt);
+  commitRecord(next); // 最初の評価で作るときは、その評価を入れて1回で保存する
   if (creating) {
     requestPersist(); // 記録を作ったときに1回（§4.7）
   }
-  s.session = markRated(s.session, id);
+  if (s.kind === "practice") {
+    const p = s.practice;
+    const again = rating === 1;
+    if (again) {
+      p.queue.push(id); // もう一度はその回の最後にもう一度（押すたびに後ろに足す。§14.4）
+    }
+    p.last = { pos: p.pos, again };
+    p.pos += 1;
+  } else {
+    s.session = markRated(s.session, id);
+  }
   showNext();
   render();
+};
+
+/** 問題集の答え（§14.6）: ok が真なら「できた」、偽なら「間違えた」。押すたびに packs を保存する（cards・log などは変えない）。 */
+app.answerPack = (ok) => {
+  const s = app.study;
+  if (app.otherTab || app.readFailed || !s || s.kind !== "pack" || s.currentId === null || s.revealedAt === null) {
+    return; // 読めなかった起動の間は押せない（§14.6）
+  }
+  let base = app.record;
+  const creating = base === null;
+  if (creating) {
+    base = newRecord(); // 記録が無ければ最初の答えで作る（§14.3）
+  }
+  const pk = s.pack;
+  const before = Object.hasOwn(base, "packs") ? base.packs : undefined;
+  commitRecord(answerPack(base, pk.id, s.currentId, ok === true, app.cards)); // 上限を超えるときは今のデッキに無い物から捨てる（§14.6）
+  if (creating) {
+    requestPersist();
+  }
+  pk.last = { pos: pk.pos, before };
+  pk.pos += 1;
+  showNext();
+  render();
+};
+
+/** plan のデッキで記録の undo を戻してよいか: undo.id が今のデッキの本編のカード（pack が null）のときだけ。
+    r8 の記録の undo が問題集のカードを指していても、それを今日の分に出して FSRS の記録に戻さない（§14.6・§14.12。A231）。 */
+function planUndoTarget(u) {
+  const card = app.cardsById.get(u.id);
+  return card !== undefined && isMainCard(card);
+}
+
+/** ホームの「1つ戻す」を出すか（§11）。plan のデッキは undo に p が無く、undo.id が本編のカードのときだけ（§14.12・A231）。 */
+app.canUndoHome = () => {
+  const u = app.record ? app.record.undo : null;
+  if (!u) {
+    return false;
+  }
+  return !PLAN || (u.p !== true && planUndoTarget(u));
+};
+
+/** 学習の画面の「1つ戻す」が押せるか。plan のデッキの練習の答え（undo.p）は練習の画面の中で、その回の答えだけ（§14.12）。
+    plan のデッキは undo.id が本編のカードのときだけ（A231）。問題集はその画面の直前の答えだけ（記録の undo を使わない。§14.6）。 */
+app.canUndoStudy = () => {
+  const s = app.study;
+  if (!s || !app.record) {
+    return false;
+  }
+  if (s.kind === "pack") {
+    return s.pack.last !== null;
+  }
+  const u = app.record.undo;
+  if (!u) {
+    return false;
+  }
+  if (!PLAN) {
+    return true;
+  }
+  if (!planUndoTarget(u)) {
+    return false;
+  }
+  return s.kind === "practice" ? u.p === true && s.practice.last !== null : u.p !== true;
 };
 
 /** 学習の画面の「1つ戻す」（§4.6）: 直前の評価を取り消し、そのカードを表から出し直す（今の章の設定で出ないカードでも）。 */
 app.undo = () => {
   const s = app.study;
-  if (app.otherTab || !s || !app.record || !app.record.undo) {
+  if (app.otherTab || !app.canUndoStudy()) {
+    return;
+  }
+  if (s.kind === "pack") {
+    const pk = s.pack;
+    commitRecord(restorePacks(app.record, pk.last.before)); // 押す前の packs の値に戻して保存（§14.6）
+    pk.pos = pk.last.pos;
+    pk.last = null;
+    showNext();
+    render();
     return;
   }
   const id = app.record.undo.id;
   commitRecord(undoLast(app.record));
-  if (app.cardsById.has(id)) {
-    s.session = withFront(s.session, id, app.modeCards, app.record, app.now(), QOPTS);
+  if (s.kind === "practice") {
+    const p = s.practice;
+    if (p.last.again) {
+      p.queue.pop(); // 後ろに足した「もう一度」の分を除く
+    }
+    p.pos = p.last.pos; // 戻したカードをその回の表に出し直す（§14.4）
+    p.last = null;
+  } else if (app.cardsById.has(id)) {
+    s.session = withFront(s.session, id, app.mainCards, app.record, app.now(), app.queueOpts);
   }
   showNext();
   render();
 };
 
-/** ホームの「1つ戻す」（§11）: 戻して、学習の画面でそのカードの表から始める（出す章が 0 でも開ける）。 */
+/** ホームの「1つ戻す」（§11）: 戻して、学習の画面でそのカードの表から始める（出す章が 0 でも開ける）。
+    plan のデッキは undo に p が無く undo.id が本編のカードのときだけ（ホームにも出さない。A231）で、続きは今日の分の流れ（§14.12）。 */
 app.undoFromHome = () => {
-  if (app.otherTab || !app.record || !app.record.undo) {
+  if (app.otherTab || !app.canUndoHome()) {
     return;
   }
   const id = app.record.undo.id;
   commitRecord(undoLast(app.record));
-  if (QOPTS.selfPaced) {
-    // 戻したカードを出し、続けて、新しいカードなら「続きから」、そうでなければ「復習する」の流れ（§13.10）
-    app.studyFlow = { flow: isNewEntry(entryOf(app.record, id)) ? "new" : "review", chapter: null };
-  }
+  app.studyFlow = PLAN ? { flow: "today" } : null;
   beginSession(id);
   app.undoResume = true;
   app.navigate("study");
+};
+
+/** 上限の知らせの ×（§14.3）: planNoticeOff に足して保存（目標日か上限を変えると、また一度出る）。記録があるときだけ（A208）。 */
+app.dismissPlanNotice = (key) => {
+  if (!PLAN || app.otherTab || app.readFailed || !app.record || typeof key !== "string") {
+    return;
+  }
+  commitRecord(dismissPlanNotice(app.record, key));
+  render();
 };
 
 // ---- 週の報告（§2.5・§4.8・§11） ----
@@ -467,7 +782,7 @@ app.weeklyReport = () => {
   const now = app.now();
   const exportedAt = new Date(now).toISOString(); // ファイルと記録の両方に使う（§2.5）
   const json = JSON.stringify(buildReport({ record: app.record, appVersion: APP_VERSION, errors: readErrors(), exportedAt, kind: DECK.reportKind }));
-  const text = weekSummary(app.cards, app.record, now, QOPTS);
+  const text = PLAN ? planWeekSummary(app.cards, app.mainCards, app.record, now, PLAN_DECK) : weekSummary(app.cards, app.record, now); // §14.10・§11
   const jsonName = reportFileName(now, "json", DECK.fileStem);
   const file = pickShareFile(json, jsonName, reportFileName(now, "txt", DECK.fileStem));
   app.reportNote = null;
@@ -564,7 +879,8 @@ app.confirmImport = () => {
     render();
     return;
   }
-  app.record = forgetUnknownPack(rec);
+  app.record = rec; // r8 の settings.pack は残すが読まない（§14.8）
+  app.practicePending = null; // 前回の範囲は読み込んだ記録の物（§14.12）
   app.saveLocked = false;
   app.brokenLocked = false;
   app.saveFailed = false;
@@ -577,7 +893,7 @@ app.confirmImport = () => {
 };
 
 app.cancelImport = () => {
-  app.navigate(app.fromBroken ? "broken" : "settings");
+  app.navigate(app.fromBroken ? "broken" : PLAN ? "home" : "settings"); // plan のデッキは読み込みを取り消した後 #home（§14.12）
 };
 
 app.openReset = () => {
@@ -611,7 +927,7 @@ app.resetNext = () => {
   resolvePendingStash();
   app.gate = null;
   app.fromBroken = false;
-  app.navigate(QOPTS.selfPaced ? "home" : "settings"); // 自分で進めるデッキは新しく始めた後も #home（§13.10）
+  app.navigate(PLAN ? "home" : "settings"); // plan のデッキは新しく始めた後も #home（§14.12）
 };
 
 app.cancelReset = () => {
@@ -630,7 +946,7 @@ async function loadCards(reload) {
     throw new Error(`cards.json が大きすぎる（${bytes.byteLength} バイト）`); // §3・§11: 構造の違反
   }
   const obj = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-  const bad = checkCardsStructure(obj, { tagIds: DECK.tags.map((t) => t.id), packIds: DECK.packs.map((pk) => pk.id) });
+  const bad = checkCardsStructure(obj, { tagIds: DECK.tags.map((t) => t.id), packIds: DECK.packs.map((pk) => pk.id), fields: DECK.fields });
   if (bad !== null) {
     throw new Error(`cards.json の構造の違反: ${bad}`);
   }
@@ -709,7 +1025,7 @@ async function loadFigures(cards) {
   });
   const missing = [];
   for (const c of cards) {
-    for (const field of ["q", "a", "how"]) {
+    for (const field of HTML_FIELDS) { // 解説（exp）の図も（§14.13）
       if (typeof c[field] !== "string") {
         continue;
       }
@@ -756,6 +1072,7 @@ async function boot({ reload = false } = {}) {
     return;
   }
   app.cards = deck.cards;
+  app.mainCards = deck.cards.filter(isMainCard);
   app.cardsById = new Map(deck.cards.map((c) => [c.id, c]));
   app.edition = deck.edition;
   if (DECK.features.math) {
@@ -780,7 +1097,7 @@ async function boot({ reload = false } = {}) {
   if (error !== null) {
     addError("record", `記録を読めない（保存を止める）: ${error}`); // A47: 記録なしとして進み、保存はしない
   } else if (raw !== null) {
-    const parsed = parseStoredRecord(raw);
+    const parsed = parseStoredRecord(raw, RECORD_OPTS);
     if (parsed.kind === "newer") {
       stopAt("newer");
       return;
@@ -800,7 +1117,7 @@ async function boot({ reload = false } = {}) {
       rec = upd.record;
       repaired = repaired || upd.changed;
     }
-    app.record = forgetUnknownPack(rec);
+    app.record = rec; // r8 の settings.pack は残すが読まない・書き戻さない（§14.8）
     if (repaired) {
       commitRecord(app.record); // 直した物は起動時に1回書き戻す（§4.8）
     }
@@ -809,7 +1126,7 @@ async function boot({ reload = false } = {}) {
     return;
   }
   // (4) 記録が無い → #settings、(5) → #home
-  history.replaceState(null, "", app.record || QOPTS.selfPaced ? "#home" : "#settings"); // 自分で進めるデッキは記録が無くても #home（§13.10）
+  history.replaceState(null, "", app.record || PLAN ? "#home" : "#settings"); // plan のデッキは記録が無くても #home（§14.12）
   app.study = null;
   route();
 }
@@ -885,6 +1202,10 @@ function installGlobalHandlers() {
     ev.preventDefault(); // スペースでページが動く・フォーカスのあるボタンが押されるのを止める
     if (action.kind === "reveal") {
       app.reveal();
+    } else if (action.kind === "rate" && app.study && app.study.kind === "pack") {
+      if (action.rating === 1 || action.rating === 3) {
+        app.answerPack(action.rating === 3); // 問題集は 1＝間違えた、3＝できた（§14.6）
+      }
     } else if (action.kind === "rate") {
       app.rate(action.rating);
     } else {

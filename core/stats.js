@@ -1,6 +1,6 @@
-/* 責務: 統計の数（今日の評価と正答率・連続日数 §4.5・章ごとの数・出した N/M §2.4・出し終える見込みと間に合うか §11・最後の週の報告）と週の報告の要約の文（§11）。
-   依存: ./day.js、./queue.js（項目の引き当て・章の一覧・明日の復習）。
-   注意: 時刻は引数。未来の日のキー・log は数えない（§11）。統計の画面（S16〜S18）と要約の文は同じ関数で数える。 */
+/* 責務: 統計の数（今日の評価と正答率・連続日数 §4.5・章ごとの数・出した N/M §2.4・出し終える見込みと間に合うか §11・最後の週の報告）と週の報告の要約の文（§11。化学）。
+   依存: ./day.js、./queue.js（項目の引き当て・章の一覧・明日の復習）。plan のデッキ（物理）の統計と文は ./plan_stats.js がここの共通の数（todayNumbers・weekNumbers・sumDays）を使う。
+   注意: 時刻は引数。未来の日のキー・log は数えない（§11）。統計の画面（S16〜S18）と要約の文は同じ関数で数える。plan.js がここを読むので、ここから plan.js を読まない（循環）。 */
 import { logicalDay, addDays } from "./day.js";
 import { entryOf, isNewEntry, chapterList, tomorrowReviews } from "./queue.js";
 
@@ -144,25 +144,48 @@ export function statsView(cards, record, nowMs, examDay = EXAM_DAY, opts = {}) {
   };
 }
 
-/** 週の報告の要約の文（§11）:「{M/D}まで7日 復習 {7日の reviewsDone}・評価 {7日の log}回・正答 {N}%・連続 {N}日・出した {N}/{M}・見込み {…}」。 */
-export function weekSummary(cards, record, nowMs, opts = {}) {
+/** 今日の評価の回数と正答率の文（§2.4。統計の画面の「今日の評価」）。 */
+export function todayNumbers(record, nowMs) {
   const today = logicalDay(nowMs);
+  const { count, correct } = countLog(record.log, new Set([today]));
+  return { today, count, rate: rateText(count, correct) };
+}
+
+/** 直近7日（今日を含む論理日の集まり）。 */
+export function weekDays(today) {
   const week = new Set();
   for (let k = 0; k < WEEK_DAYS; k += 1) {
     week.add(addDays(today, -k));
   }
-  let reviews = 0;
-  for (const d of week) {
-    if (Object.hasOwn(record.reviewsDone, d)) {
-      reviews += record.reviewsDone[d];
+  return week;
+}
+
+/** 日のキーの数（reviewsDone・practiceDone など）を days の日だけ足す。map が無ければ 0。 */
+export function sumDays(map, days) {
+  let n = 0;
+  if (map && typeof map === "object") {
+    for (const d of days) {
+      if (Object.hasOwn(map, d)) {
+        n += map[d];
+      }
     }
   }
+  return n;
+}
+
+/** 週の報告の要約の文の共通の数（§11・§14.10）: 今日・直近7日の reviewsDone・log の件数・正答率の文・連続日数。 */
+export function weekNumbers(record, nowMs) {
+  const today = logicalDay(nowMs);
+  const week = weekDays(today);
   const { count, correct } = countLog(record.log, week);
-  const rate = rateText(count, correct);
+  return { today, week, reviews: sumDays(record.reviewsDone, week), count, rate: rateText(count, correct), streak: streak(record.days, today) };
+}
+
+/** 週の報告の要約の文（§11。化学）:「{M/D}まで7日 復習 {7日の reviewsDone}・評価 {7日の log}回・正答 {N}%・連続 {N}日・出した {N}/{M}・見込み {…}」。
+    plan のデッキ（物理）の文は plan_stats.js の planWeekSummary（§14.10）。 */
+export function weekSummary(cards, record, nowMs) {
+  const w = weekNumbers(record, nowMs);
   const { shown, total } = shownCount(cards, record);
-  const head = `${formatMD(today)}まで7日 復習 ${reviews}・評価 ${count}回・正答 ${rate}・連続 ${streak(record.days, today)}日・出した ${shown}/${total}`;
-  if (opts.selfPaced) {
-    return head; // 自分で進めるデッキは見込みを出さない（§13.10）
-  }
+  const head = `${formatMD(w.today)}まで7日 復習 ${w.reviews}・評価 ${w.count}回・正答 ${w.rate}・連続 ${w.streak}日・出した ${shown}/${total}`;
   return `${head}・見込み ${estimateText(finishEstimate(cards, record, nowMs))}`;
 }

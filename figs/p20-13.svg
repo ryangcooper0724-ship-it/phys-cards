@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <line x1="30" y1="96" x2="348" y2="96" stroke="#1a1d21" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="30" y1="236" x2="30" y2="30" stroke="#1a1d21" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="340" y="88" font-size="16" font-style="italic">r</text>
+  <text x="36" y="40" font-size="12" font-family="sans-serif">エネルギー</text>
+  <text x="16" y="101" font-size="13">0</text>
+  <polyline points="80,206 85,196 90,187.7 95,180.6 100,174.6 105,169.3 110,164.8 115,160.7 120,157.1 125,153.9 130,151 135,148.4 140,146 145,143.8 150,141.8 155,140 160,138.3 165,136.7 170,135.3 175,133.9 180,132.7 185,131.5 190,130.4 195,129.3 200,128.4 205,127.4 210,126.6 215,125.7 220,124.9 225,124.2 230,123.5 235,122.8 240,122.2 245,121.6 250,121 255,120.4 260,119.9 265,119.4 270,118.9 275,118.4 280,118 285,117.6 290,117.2 295,116.8 300,116.4 305,116 310,115.6 315,115.3 320,115 325,114.6 330,114.3 335,114 340,113.7 345,113.5 350,113.2 355,112.9" fill="none" stroke="#1a1d21" stroke-width="2"/>
+  <line x1="80" y1="96" x2="80" y2="206" stroke="#1a1d21" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="74" y="88" font-size="15" font-style="italic">R</text>
+  <text x="86" y="210" font-size="11" font-family="sans-serif" fill="#565d66">地表</text>
+  <text x="210" y="154.6" font-size="13" font-family="sans-serif">U(r) = −GMm/r</text>
+  <line x1="80" y1="151" x2="130" y2="151" stroke="#1f5f8b" stroke-width="2"/>
+  <circle cx="130" cy="151" r="3" fill="#1f5f8b"/>
+  <text x="138" y="169" font-size="11" font-family="sans-serif" fill="#1f5f8b">E &lt; 0：ここで引き返す</text>
+  <line x1="80" y1="96" x2="336" y2="96" stroke="#1f5f8b" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="150" y="86" font-size="11" font-family="sans-serif" fill="#1f5f8b">E = 0：無限遠にぎりぎり届く</text>
+  <line x1="80" y1="56" x2="336" y2="56" stroke="#1f5f8b" stroke-width="2"/>
+  <text x="150" y="50" font-size="11" font-family="sans-serif" fill="#1f5f8b">E &gt; 0：飛び去る</text>
+  <text x="90" y="236" font-size="11" font-family="sans-serif" fill="#565d66">線と曲線の差が運動エネルギー K = E − U</text>
+</svg>

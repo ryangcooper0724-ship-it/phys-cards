@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <line x1="54" y1="130" x2="340" y2="130" stroke="#1a1d21" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="330" y="152" font-size="17" font-style="italic">x</text>
+  <circle cx="190" cy="130" r="100" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <circle cx="140" cy="130" r="50" fill="#ffffff" stroke="#1a1d21" stroke-width="1.8" stroke-dasharray="6 3"/>
+  <line x1="54" y1="130" x2="340" y2="130" stroke="#1a1d21" stroke-width="1.2"/>
+  <circle cx="190" cy="130" r="3" fill="#1a1d21"/>
+  <text x="196" y="148" font-size="15" font-style="italic">O</text>
+  <line x1="190" y1="130" x2="266.6" y2="65.7" stroke="#1a1d21" stroke-width="1.2"/>
+  <text x="232.3" y="93.9" font-size="16" font-style="italic">R</text>
+  <circle cx="140" cy="130" r="2.5" fill="#1a1d21"/>
+  <line x1="140" y1="130" x2="118.9" y2="84.7" stroke="#1a1d21" stroke-width="1.2"/>
+  <text x="107.4" y="109.3" font-size="14" font-style="italic">R/2</text>
+  <text x="116" y="154" font-size="12" font-family="sans-serif">くりぬく</text>
+  <text x="16" y="240" font-size="11" font-family="sans-serif" fill="#565d66">穴：中心 (−R/2, 0)・半径 R/2</text>
+  <text x="262" y="22" font-size="12" font-family="sans-serif" fill="#565d66">一様な薄い円板</text>
+</svg>

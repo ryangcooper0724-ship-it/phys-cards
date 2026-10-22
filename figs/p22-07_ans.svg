@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <polygon points="26.6,234.6 343.7,234.6 343.7,86.6" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <path d="M66.6,234.6 A40,40 0 0 0 62.9,217.7" fill="none" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="72" y="230" font-size="17" font-style="italic">θ</text>
+  <g transform="translate(150,177) rotate(-25)">
+    <rect x="0" y="-120" width="60" height="120" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+    <circle cx="30" cy="-60" r="4" fill="#1a1d21"/>
+    <text x="38" y="-62" font-size="17" font-style="italic">G</text>
+    <line x1="30" y1="-56" x2="30" y2="0" stroke="#1a1d21" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="35" y="-24" font-size="15" font-style="italic">H<tspan font-size="10" dy="4">G</tspan></text>
+    <line x1="1" y1="12" x2="29" y2="12" stroke="#1a1d21" stroke-width="1.2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+    <text x="9" y="30" font-size="15" font-style="italic">L</text>
+  </g>
+  <line x1="151.8" y1="109.9" x2="151.8" y2="206.2" stroke="#1f5f8b" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <line x1="151.8" y1="109.9" x2="151.8" y2="139.9" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="121.8" y="139.9" font-size="16" font-style="italic" fill="#1f5f8b">mg</text>
+  <line x1="150.8" y1="176.2" x2="150.8" y2="148.2" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <circle cx="151.8" cy="176.2" r="3.5" fill="#1f5f8b"/>
+  <text x="125.8" y="182.2" font-size="16" font-style="italic" fill="#1f5f8b">Q</text>
+  <text x="12" y="26" font-size="11" font-family="sans-serif">抗力の作用点 Q ＝ G を通る鉛直線と底面の交点</text>
+  <text x="12" y="42" font-size="11" font-family="sans-serif">Q が下側の角に届くのが限界：H<tspan font-size="9" dy="3">G</tspan><tspan dy="-3"> </tspan>tanθ = L</text>
+  <text x="250" y="64" font-size="13" font-family="sans-serif" fill="#565d66">下側の端は左</text>
+</svg>

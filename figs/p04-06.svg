@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <text x="14" y="20" font-size="13" font-family="sans-serif" fill="#565d66">地面から見る</text>
+  <text x="244" y="20" font-size="13" font-family="sans-serif" fill="#565d66">1 から見た 2</text>
+  <line x1="232" y1="28" x2="232" y2="236" stroke="#8a929b" stroke-width="1" stroke-dasharray="3 3"/>
+  <polyline points="16,212 21.5,201.2 27,190.9 32.5,181 38,171.5 43.5,162.5 49,153.9 54.5,145.8 60,138.1 65.5,130.8 71,124 76.5,117.6 82,111.7 87.5,106.2 93,101.1 98.5,96.5 104,92.3 109.5,88.6 115,85.3 120.5,82.4 126,80 131.5,78 137,76.5 142.5,75.4 148,74.7 153.5,74.5 159,74.7 164.5,75.4 170,76.5 175.5,78 181,80" fill="none" stroke="#1a1d21" stroke-width="1.5"/>
+  <polyline points="214,190 211.8,182.5 209.6,175.5 207.4,168.9 205.2,162.7 203,157 200.8,151.7 198.6,146.9 196.4,142.5 194.2,138.5 192,135 189.8,131.9 187.6,129.3 185.4,127.1 183.2,125.3 181,124 178.8,123.1 176.6,122.7 174.4,122.7 172.2,123.1 170,124 167.8,125.3 165.6,127.1 163.4,129.3 161.2,131.9 159,135 156.8,138.5 154.6,142.5 152.4,146.9 150.2,151.7 148,157" fill="none" stroke="#1a1d21" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <line x1="10" y1="216" x2="226" y2="216" stroke="#8a929b" stroke-width="1"/>
+  <line x1="16" y1="212" x2="214" y2="190" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="16" cy="212" r="3" fill="#1a1d21"/>
+  <circle cx="214" cy="190" r="3" fill="#1a1d21"/>
+  <text x="4" y="208" font-size="12">0</text>
+  <text x="219" y="185" font-size="12">0</text>
+  <line x1="71" y1="124" x2="192" y2="135" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="71" cy="124" r="3" fill="#1a1d21"/>
+  <circle cx="192" cy="135" r="3" fill="#1a1d21"/>
+  <text x="59" y="120" font-size="12">1</text>
+  <text x="197" y="130" font-size="12">1</text>
+  <line x1="126" y1="80" x2="170" y2="124" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="126" cy="80" r="3" fill="#1a1d21"/>
+  <circle cx="170" cy="124" r="3" fill="#1a1d21"/>
+  <text x="114" y="76" font-size="12">2</text>
+  <text x="175" y="119" font-size="12">2</text>
+  <line x1="181" y1="80" x2="148" y2="157" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="181" cy="80" r="3" fill="#1a1d21"/>
+  <circle cx="148" cy="157" r="3" fill="#1a1d21"/>
+  <text x="169" y="76" font-size="12">3</text>
+  <text x="153" y="152" font-size="12">3</text>
+  <text x="12" y="234" font-size="12" font-family="sans-serif">物体1</text>
+  <text x="178" y="234" font-size="12" font-family="sans-serif">物体2</text>
+  <text x="14" y="246" font-size="11" font-family="sans-serif" fill="#565d66">数字は同じ時刻。青い矢印＝1 から 2 への相対位置</text>
+  <line x1="350.9" y1="57.6" x2="235.9" y2="106.9" stroke="#1a1d21" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#ah)"/>
+  <line x1="262" y1="70" x2="343" y2="61" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="343" cy="61" r="2.5" fill="#1a1d21"/>
+  <text x="345" y="54" font-size="12">0</text>
+  <line x1="262" y1="70" x2="311.5" y2="74.5" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="311.5" cy="74.5" r="2.5" fill="#1a1d21"/>
+  <text x="313.5" y="67.5" font-size="12">1</text>
+  <line x1="262" y1="70" x2="280" y2="88" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="280" cy="88" r="2.5" fill="#1a1d21"/>
+  <text x="282" y="81" font-size="12">2</text>
+  <line x1="262" y1="70" x2="248.5" y2="101.5" stroke="#1f5f8b" stroke-width="1.2" marker-end="url(#af)"/>
+  <circle cx="248.5" cy="101.5" r="2.5" fill="#1a1d21"/>
+  <text x="250.5" y="94.5" font-size="12">3</text>
+  <circle cx="262" cy="70" r="3.5" fill="#1a1d21"/>
+  <text x="240" y="62" font-size="13" font-family="sans-serif">1</text>
+  <text x="242" y="150" font-size="12" font-family="sans-serif" fill="#565d66">先は1本の直線の上を</text>
+  <text x="242" y="166" font-size="12" font-family="sans-serif" fill="#565d66">同じ間隔で進む</text>
+  <text x="242" y="182" font-size="12" font-family="sans-serif" fill="#565d66">＝等速直線運動</text>
+  <text x="242" y="206" font-size="12" font-family="sans-serif">相対加速度 0</text>
+</svg>

@@ -1,10 +1,11 @@
 /* 責務: DOM を作る共通の部品（el・大きな数字・横棒）と、カードの HTML をトークンの列から組み立てる（htmlField。SPEC §7）。
-   依存: ../core/allow.js（sanitize が返す消毒済みのトークンの列。§11）、../deck.js（章の名前。dist にだけある）。
+   依存: ../core/allow.js（sanitize が返す消毒済みのトークンの列。§11）、../core/fields.js（章の入る分野。§14.2）、../deck.js（章の名前・分野。dist にだけある）。
    注意: innerHTML を使わない。文字は textContent（createTextNode）だけで入れる。数式（§12.2）は main.js が setMathRenderer で渡す描き手（KaTeX）が要素を組む。図（§13.2）は ./figure.js、動き（§13.3）は ./anim_box.js。要素は sanitize が出したタグ（b i sub sup small br）だけ・属性なし。 */
 import { sanitize } from "../core/allow.js";
 import { figureNode } from "./figure.js";
 import { animBox } from "./anim_box.js";
 import { DECK } from "../deck.js";
+import { fieldOfChapter } from "../core/fields.js";
 
 /**
  * el("button", {id, className, text, attrs: {...}, on: {click: fn}, disabled}, [子...])
@@ -145,14 +146,33 @@ export function chapterColorClass(ch) {
   return `chc-${((ch % 12) + 12) % 12}`;
 }
 
-/** 章の番号だけ（「序章」「第N章」）。統計の表はこれ（23 章でも 390×750 に収める。§12.8）。 */
+/** 章の番号だけ（「序章」「第N章」。分野のあるデッキは分野の中の番号 chapter − base で、分野の label は付けない。§14.2）。
+    統計の表はこれ（23 章でも 390×750 に収める。§12.8。分野の label を付けると 2 列の表が 390 の幅をはみ出す。統計は分野ごとの行に変える予定。A197）。 */
 export function chapterLabel(ch) {
-  return ch === 0 ? "序章" : `第${ch}章`;
+  const f = fieldOfChapter(DECK.fields, ch);
+  const n = f === null ? ch : ch - f.base;
+  return n === 0 ? "序章" : `第${n}章`;
 }
 
-/** 章の名前（デッキの chapterNames にあれば「第16章 単振り子」。無ければ chapterLabel と同じ。§12.1）。 */
-export function chapterName(ch) {
+/** 分野の label を付けた章の番号（「熱力学 第1章」。分野の無いデッキは chapterLabel と同じ。§14.2）。 */
+function fieldLabel(ch) {
+  const f = fieldOfChapter(DECK.fields, ch);
+  return f === null ? chapterLabel(ch) : `${f.label} ${chapterLabel(ch)}`;
+}
+
+function withName(label, ch) {
   const names = DECK.chapterNames;
   const key = String(ch);
-  return Object.hasOwn(names, key) ? `${chapterLabel(ch)} ${names[key]}` : chapterLabel(ch);
+  return Object.hasOwn(names, key) ? `${label} ${names[key]}` : label;
+}
+
+/** 章の名前（デッキの chapterNames にあれば「第16章 単振り子」。無ければ chapterLabel と同じ。§12.1）。
+    分野のあるデッキは「{分野の label} 第{chapter − base}章 {名前}」（0 なら「{label} 序章」、名前が無ければ名前なし。§14.2）。 */
+export function chapterName(ch) {
+  return withName(fieldLabel(ch), ch);
+}
+
+/** 分野の label を省いた章の名前（「第1章 {名前}」。分野が1つしかない画面＝範囲のたたみの中・練習の章の札で使う。§14.2）。化学は chapterName と同じ。 */
+export function chapterShortName(ch) {
+  return withName(chapterLabel(ch), ch);
 }

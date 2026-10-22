@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <line x1="10" y1="210" x2="350" y2="210" stroke="#1a1d21" stroke-width="2"/>
+  <g stroke="#8a929b" stroke-width="1">
+    <line x1="20" y1="210" x2="12" y2="218"/>
+    <line x1="50" y1="210" x2="42" y2="218"/>
+    <line x1="80" y1="210" x2="72" y2="218"/>
+    <line x1="110" y1="210" x2="102" y2="218"/>
+    <line x1="140" y1="210" x2="132" y2="218"/>
+    <line x1="170" y1="210" x2="162" y2="218"/>
+    <line x1="200" y1="210" x2="192" y2="218"/>
+    <line x1="230" y1="210" x2="222" y2="218"/>
+    <line x1="260" y1="210" x2="252" y2="218"/>
+    <line x1="290" y1="210" x2="282" y2="218"/>
+    <line x1="320" y1="210" x2="312" y2="218"/>
+    <line x1="350" y1="210" x2="342" y2="218"/>
+  </g>
+  <polygon points="30,210 330,210 330,60" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <path d="M76,210 A46,46 0 0 0 71.1,189.4" fill="none" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="82" y="202" font-size="18" font-style="italic">θ</text>
+  <rect x="0" y="-30" width="44" height="30" fill="#ffffff" stroke="#1a1d21" stroke-width="2" transform="translate(162.4,143.8) rotate(-26.6)"/>
+  <text x="169.3" y="126.5" font-size="18" font-style="italic">m</text>
+  <text x="30" y="40" font-size="13" font-family="sans-serif" fill="#565d66">あらい斜面</text>
+  <text x="30" y="56" font-size="13" font-family="sans-serif" fill="#565d66">物体は静止</text>
+  <line x1="175.3" y1="120.5" x2="175.3" y2="190.5" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="145.3" y="194.5" font-size="17" font-style="italic" fill="#1f5f8b">mg</text>
+  <line x1="175.3" y1="120.5" x2="147.3" y2="134.5" stroke="#1f5f8b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#af)"/>
+  <line x1="175.3" y1="120.5" x2="203.3" y2="176.5" stroke="#1f5f8b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#af)"/>
+  <line x1="147.3" y1="134.5" x2="175.3" y2="190.5" stroke="#8a929b" stroke-width="1" stroke-dasharray="2 2"/>
+  <line x1="203.3" y1="176.5" x2="175.3" y2="190.5" stroke="#8a929b" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="81.3" y="140.5" font-size="14" font-style="italic" fill="#1f5f8b">mg sinθ</text>
+  <text x="209.3" y="190.5" font-size="14" font-style="italic" fill="#1f5f8b">mg cosθ</text>
+  <line x1="189.2" y1="130.4" x2="161.2" y2="74.4" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="145.2" y="68.4" font-size="18" font-style="italic" fill="#1f5f8b">n</text>
+  <line x1="199.9" y1="120.5" x2="227.9" y2="106.5" stroke="#1f5f8b" stroke-width="2.5" marker-end="url(#af)"/>
+  <text x="229.9" y="100.5" font-size="18" font-style="italic" fill="#1f5f8b">f</text>
+</svg>

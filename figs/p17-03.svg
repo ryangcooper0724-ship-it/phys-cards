@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <circle cx="170" cy="108" r="92" fill="none" stroke="#1a1d21" stroke-width="2.2"/>
+  <circle cx="170" cy="108" r="99" fill="none" stroke="#8a929b" stroke-width="1" stroke-dasharray="2 4"/>
+  <circle cx="170" cy="108" r="2.5" fill="#1a1d21"/>
+  <text x="152" y="102" font-size="15" font-style="italic">O</text>
+  <line x1="170" y1="108" x2="170" y2="200" stroke="#1a1d21" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="170" y1="108" x2="229.1" y2="178.5" stroke="#1a1d21" stroke-width="1.2"/>
+  <path d="M170,138 A30,30 0 0 0 189.3,131" fill="none" stroke="#1a1d21" stroke-width="1.2"/>
+  <text x="174" y="154" font-size="16" font-style="italic">θ</text>
+  <text x="196.9" y="176.5" font-size="16" font-style="italic">R</text>
+  <circle cx="229.1" cy="178.5" r="7" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="239.1" y="194.5" font-size="16" font-style="italic">m</text>
+  <text x="270" y="30" font-size="12" font-family="sans-serif" fill="#565d66">なめらかな</text>
+  <text x="270" y="46" font-size="12" font-family="sans-serif" fill="#565d66">円筒の内面</text>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <ellipse cx="190" cy="150" rx="130" ry="74" fill="none" stroke="#1a1d21" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="83.1,150 234.5,80.5 217.4,76.9" fill="#d9dee3" stroke="none" stroke-width="0"/>
+  <line x1="83.1" y1="150" x2="234.5" y2="80.5" stroke="#1a1d21" stroke-width="1.5"/>
+  <line x1="83.1" y1="150" x2="217.4" y2="76.9" stroke="#1a1d21" stroke-width="0.8"/>
+  <circle cx="83.1" cy="150" r="4" fill="#1a1d21"/>
+  <text x="71.1" y="172" font-size="16" font-style="italic">M</text>
+  <circle cx="234.5" cy="80.5" r="5" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="236.5" y="70.5" font-size="16" font-style="italic">m</text>
+  <line x1="234.5" y1="80.5" x2="177.7" y2="68.7" stroke="#1a1d21" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="161.7" y="64.7" font-size="17" font-style="italic"><tspan font-weight="bold">v</tspan></text>
+  <line x1="234.5" y1="80.5" x2="220.1" y2="49.2" stroke="#1f5f8b" stroke-width="1.8" marker-end="url(#af)"/>
+  <line x1="220.1" y1="49.2" x2="177.7" y2="68.7" stroke="#8a929b" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="226.1" y="53.2" font-size="16" font-style="italic" fill="#1f5f8b">v<tspan font-size="12" dy="4" font-style="normal" font-family="sans-serif">⊥</tspan></text>
+  <text x="166.8" y="129.2" font-size="16" font-style="italic">r</text>
+  <text x="12" y="18" font-size="11" font-family="sans-serif" fill="#565d66">灰色：短い時間に r が掃く面積</text>
+  <text x="12" y="34" font-size="11" font-family="sans-serif">面積速度 S = ½ r v⊥（一定）</text>
+  <text x="12" y="50" font-size="11" font-family="sans-serif">角運動量 L = 2mS</text>
+</svg>

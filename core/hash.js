@@ -1,6 +1,6 @@
 /* 責務: カードのハッシュ（SPEC §4.3: JSON.stringify([star, yoyu, chapter, q, a, how]) の UTF-8 の SHA-256 の先頭8桁）。
    依存: crypto.subtle（http://127.0.0.1・localhost・https で使える）。引数で差し替えられる。
-   注意: 値は cards.json のそのまま（消毒の前）。crypto.subtle が無ければ例外（呼ぶ側が「この場所では動きません」にする）。 */
+   注意: 値は cards.json のそのまま（消毒の前）。tag・pack・exp（解説。§14.13）は入れない（直しても版の知らせの「変わった」に数えない）。crypto.subtle が無ければ例外（呼ぶ側が「この場所では動きません」にする）。 */
 
 function subtleOrThrow(subtle) {
   const s = subtle ?? globalThis.crypto?.subtle;

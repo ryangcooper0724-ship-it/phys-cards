@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <line x1="10" y1="215" x2="350" y2="215" stroke="#1a1d21" stroke-width="2"/>
+  <g stroke="#8a929b" stroke-width="1">
+    <line x1="20" y1="215" x2="12" y2="223"/>
+    <line x1="50" y1="215" x2="42" y2="223"/>
+    <line x1="80" y1="215" x2="72" y2="223"/>
+    <line x1="110" y1="215" x2="102" y2="223"/>
+    <line x1="140" y1="215" x2="132" y2="223"/>
+    <line x1="170" y1="215" x2="162" y2="223"/>
+    <line x1="200" y1="215" x2="192" y2="223"/>
+    <line x1="230" y1="215" x2="222" y2="223"/>
+    <line x1="260" y1="215" x2="252" y2="223"/>
+    <line x1="290" y1="215" x2="282" y2="223"/>
+    <line x1="320" y1="215" x2="312" y2="223"/>
+    <line x1="350" y1="215" x2="342" y2="223"/>
+  </g>
+  <polygon points="30,65 30,215 330,215" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+  <path d="M288.9,194.4 A46,46 0 0 0 284,215" fill="none" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="264" y="209" font-size="18" font-style="italic">θ</text>
+  <circle cx="50.1" cy="60.5" r="4" fill="#ffffff" stroke="#1a1d21" stroke-width="1.8"/>
+  <rect x="0" y="-28" width="44" height="28" fill="#ffffff" stroke="#1a1d21" stroke-width="2" transform="translate(180.3,140.1) rotate(26.6)"/>
+  <line x1="50.1" y1="60.5" x2="186.5" y2="127.6" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="79.2" y="56.1" font-size="12" font-family="sans-serif" fill="#565d66">ゴムひも</text>
+  <line x1="127.5" y1="116" x2="146.3" y2="78.4" stroke="#1a1d21" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="141.8" y="69.5" font-size="14" font-style="italic">O</text>
+  <line x1="143.6" y1="83.8" x2="195.5" y2="109.7" stroke="#1a1d21" stroke-width="1.2" marker-end="url(#ah)"/>
+  <text x="171.3" y="77.5" font-size="17" font-style="italic">x</text>
+  <text x="200.2" y="143.4" font-size="17" font-style="italic">m</text>
+  <text x="212" y="30" font-size="12" font-family="sans-serif" fill="#565d66">O：自然長の位置</text>
+  <text x="212" y="46" font-size="12" font-family="sans-serif" fill="#565d66">あらい斜面（μ′）</text>
+  <text x="212" y="62" font-size="12" font-family="sans-serif" fill="#565d66">下へすべっている</text>
+</svg>

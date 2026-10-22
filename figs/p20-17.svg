@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Times New Roman, serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/>
+    </marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/>
+    </marker>
+  </defs>
+  <ellipse cx="178" cy="120" rx="140" ry="116" fill="none" stroke="#1a1d21" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <circle cx="256.4" cy="120" r="7" fill="#f2d58a" stroke="#1a1d21" stroke-width="1.5"/>
+  <text x="222.4" y="144" font-size="12" font-family="sans-serif">太陽</text>
+  <circle cx="318" cy="120" r="5" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <circle cx="38" cy="120" r="5" fill="#ffffff" stroke="#1a1d21" stroke-width="2"/>
+  <text x="264" y="182" font-size="12" font-family="sans-serif">近点</text>
+  <text x="54" y="168" font-size="12" font-family="sans-serif">遠点</text>
+</svg>
