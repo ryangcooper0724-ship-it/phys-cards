@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 270" font-family="sans-serif">
+<title>正方形の4辺の抵抗と対角の導線</title>
+<polyline points="90,100 90,40 154,40" fill="none" stroke="#1a1d21" stroke-width="2"/>
+<polyline points="166,40 230,40 230,100" fill="none" stroke="#1a1d21" stroke-width="2"/>
+<line x1="154" y1="24" x2="154" y2="56" stroke="#1a1d21" stroke-width="2.5"/>
+<line x1="166" y1="31" x2="166" y2="49" stroke="#1a1d21" stroke-width="4"/>
+<text x="168" y="22" font-size="14">電池</text>
+<line x1="90" y1="100" x2="230" y2="100" stroke="#1a1d21" stroke-width="2"/>
+<line x1="230" y1="100" x2="230" y2="230" stroke="#1a1d21" stroke-width="2"/>
+<line x1="230" y1="230" x2="90" y2="230" stroke="#1a1d21" stroke-width="2"/>
+<line x1="90" y1="230" x2="90" y2="100" stroke="#1a1d21" stroke-width="2"/>
+<rect x="136" y="92" width="48" height="16" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+<rect x="222" y="141" width="16" height="48" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+<rect x="136" y="222" width="48" height="16" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+<rect x="82" y="141" width="16" height="48" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+<line x1="90" y1="100" x2="230" y2="230" stroke="#1a1d21" stroke-width="2"/>
+<circle cx="90" cy="100" r="4" fill="#1a1d21"/>
+<circle cx="230" cy="100" r="4" fill="#1a1d21"/>
+<circle cx="230" cy="230" r="4" fill="#1a1d21"/>
+<circle cx="90" cy="230" r="4" fill="#1a1d21"/>
+<text x="68" y="98" font-size="17">A</text>
+<text x="240" y="98" font-size="17">B</text>
+<text x="240" y="248" font-size="17">C</text>
+<text x="66" y="248" font-size="17">D</text>
+<text x="153" y="86" font-size="16" font-style="italic">R</text>
+<text x="246" y="171" font-size="16" font-style="italic">R</text>
+<text x="153" y="258" font-size="16" font-style="italic">R</text>
+<text x="62" y="171" font-size="16" font-style="italic">R</text>
+<text x="150" y="182" font-size="13" fill="#565d66">導線</text>
+</svg>

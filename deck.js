@@ -171,9 +171,8 @@ export const DECK = Object.freeze({
   "packs": [
     {
       "id": "kyotsu",
-      "label": "共テ対策（仮）",
-      "desc": "共通テストの小問の形（比・向き・グラフの読み）。中身は仮",
-      "soon": true
+      "label": "共テ対策",
+      "desc": "共通テストの小問の形（判定・比べる・極限・暗算）。1問1判断で見方を確かめる"
     }
   ],
   "features": {

@@ -26,7 +26,7 @@ const SETTINGS_OPTIONAL = ["tags", "pack", "goal1", "goal2", "round2Mode", "rang
 export const RANGE_MAX = 1000; // rangeOff・practice.chapters
 export const PRACTICE_TAGS_MAX = 20;
 export const PACKS_MAX = 20;
-export const PACK_IDS_MAX = 500; // packs の done・miss のそれぞれ
+export const PACK_IDS_MAX = 600; // packs の done・miss のそれぞれ（1つの問題集の上限 600 枚と同じ。A264 で 500 から 600 に）
 export const NOTICE_OFF_MAX = 20; // planNoticeOff（検査では超えたら形の違い。§14.12）
 /** 分野の id（§14.1。round2Start のキー・undo.r2s）。 */
 export const FIELD_ID_RE = /^[a-z]{2,12}$/;

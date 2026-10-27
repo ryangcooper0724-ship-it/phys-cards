@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 230" font-family="sans-serif">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1d21"/></marker></defs>
+<line x1="10" y1="210" x2="350" y2="210" stroke="#1a1d21" stroke-width="2"/>
+<rect x="231.6" y="168" width="118.4" height="42" fill="#e6edf3" stroke="#1a1d21" stroke-width="2"/>
+<circle cx="160" cy="128" r="82" fill="none" stroke="#1a1d21" stroke-width="2.5"/>
+<circle cx="160" cy="128" r="4" fill="#1a1d21"/>
+<line x1="160" y1="128" x2="110.8" y2="193.6" stroke="#8a929b" stroke-width="1.5"/>
+<text x="114" y="168" font-size="17" font-style="italic">R</text>
+<line x1="160" y1="128" x2="310" y2="128" stroke="#1a1d21" stroke-width="2.5" marker-end="url(#ah)"/>
+<text x="292" y="118" font-size="18" font-style="italic">F</text>
+<circle cx="231.6" cy="168" r="4" fill="#1a1d21"/>
+<text x="225.6" y="160" font-size="17">P</text>
+<line x1="338" y1="168" x2="338" y2="210" stroke="#8a929b" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="318" y="195.0" font-size="17" font-style="italic">h</text>
+<text x="14" y="30" font-size="13" fill="#565d66">車軸を水平に引く</text>
+</svg>
